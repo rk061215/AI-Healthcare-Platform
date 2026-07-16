@@ -1,0 +1,45 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: ""
+
+route:
+  receiver: "default"
+  group_by: ["alertname", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match:
+        severity: critical
+      receiver: "pagerduty"
+      repeat_interval: 1h
+    - match:
+        severity: high
+      receiver: "slack-alerts"
+    - match:
+        severity: medium
+      receiver: "slack-warnings"
+
+receivers:
+  - name: "default"
+    slack_configs:
+      - channel: "#alerts"
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+
+  - name: "pagerduty"
+    pagerduty_configs:
+      - routing_key: ""
+        severity: critical
+
+  - name: "slack-alerts"
+    slack_configs:
+      - channel: "#alerts"
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'
+
+  - name: "slack-warnings"
+    slack_configs:
+      - channel: "#warnings"
+        title: '{{ template "slack.title" . }}'
+        text: '{{ template "slack.text" . }}'

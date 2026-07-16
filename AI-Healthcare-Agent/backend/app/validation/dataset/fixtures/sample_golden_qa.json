@@ -1,0 +1,116 @@
+{
+  "name": "sample_golden_qa",
+  "description": "Sample golden QA set for testing the validation module",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "clinical_guidelines",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "cbc_001",
+      "document_type": "cbc_report",
+      "document_text": "Complete Blood Count: WBC 8.5 x10^3/uL, RBC 5.2 x10^6/uL, Hemoglobin 14.2 g/dL, Hematocrit 42%, Platelets 250 x10^3/uL. Neutrophils 60%, Lymphocytes 30%, Monocytes 7%, Eosinophils 2%, Basophils 1%. All values within normal range.",
+      "structured_extraction": {
+        "wbc": "8.5 x10^3/uL",
+        "rbc": "5.2 x10^6/uL",
+        "hemoglobin": "14.2 g/dL",
+        "hematocrit": "42%",
+        "platelets": "250 x10^3/uL",
+        "neutrophils": "60%",
+        "lymphocytes": "30%"
+      },
+      "metadata": {
+        "patient_age": 45,
+        "patient_gender": "M",
+        "report_date": "2026-06-15"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's hemoglobin level?",
+          "expected_answer": "The patient's hemoglobin level is 14.2 g/dL, which is within normal range.",
+          "expected_citations": ["cbc_001:hemoglobin"],
+          "expected_medical_concepts": ["hemoglobin", "complete blood count"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "Are there any abnormalities in this CBC report?",
+          "expected_answer": "No abnormalities detected. All values including WBC, RBC, hemoglobin, hematocrit, platelets, and differential count are within normal range.",
+          "expected_citations": ["cbc_001:wbc", "cbc_001:rbc", "cbc_001:hemoglobin", "cbc_001:platelets"],
+          "expected_medical_concepts": ["complete blood count", "normal range", "hematology"],
+          "difficulty": "medium",
+          "category": "lab_result",
+          "expected_confidence": 0.9
+        }
+      ]
+    },
+    {
+      "document_id": "lipid_001",
+      "document_type": "lipid_profile",
+      "document_text": "Lipid Profile: Total Cholesterol 220 mg/dL, LDL 150 mg/dL, HDL 35 mg/dL, Triglycerides 180 mg/dL. Total Cholesterol and LDL are elevated. HDL is low. Patient is at risk for cardiovascular disease.",
+      "structured_extraction": {
+        "total_cholesterol": "220 mg/dL",
+        "ldl": "150 mg/dL",
+        "hdl": "35 mg/dL",
+        "triglycerides": "180 mg/dL",
+        "interpretation": "elevated cholesterol and LDL, low HDL"
+      },
+      "metadata": {
+        "patient_age": 58,
+        "patient_gender": "M",
+        "report_date": "2026-06-10"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's LDL cholesterol level?",
+          "expected_answer": "The patient's LDL cholesterol is 150 mg/dL, which is elevated above the optimal level of less than 100 mg/dL.",
+          "expected_citations": ["lipid_001:ldl"],
+          "expected_medical_concepts": ["ldl cholesterol", "lipid profile", "hyperlipidemia"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the cardiovascular risk assessment based on this lipid profile?",
+          "expected_answer": "The patient has elevated total cholesterol (220 mg/dL), elevated LDL (150 mg/dL), and low HDL (35 mg/dL). Triglycerides are also elevated at 180 mg/dL. This profile indicates increased cardiovascular risk and may require lifestyle modifications and/or statin therapy.",
+          "expected_citations": ["lipid_001:total_cholesterol", "lipid_001:ldl", "lipid_001:hdl", "lipid_001:triglycerides"],
+          "expected_medical_concepts": ["cardiovascular risk", "hyperlipidemia", "statin therapy", "ldl cholesterol", "hdl cholesterol"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "prescription_001",
+      "document_type": "prescription",
+      "document_text": "Prescription: Metformin 500 mg, one tablet twice daily with meals. Atorvastatin 20 mg, one tablet at bedtime. Lisinopril 10 mg, one tablet daily.",
+      "structured_extraction": {
+        "medications": [
+          {"name": "Metformin", "dosage": "500 mg", "frequency": "twice daily", "instructions": "with meals"},
+          {"name": "Atorvastatin", "dosage": "20 mg", "frequency": "daily", "instructions": "at bedtime"},
+          {"name": "Lisinopril", "dosage": "10 mg", "frequency": "daily", "instructions": ""}
+        ]
+      },
+      "metadata": {
+        "prescribing_doctor": "Dr. Smith",
+        "date": "2026-06-01",
+        "patient_age": 58
+      },
+      "entries": [
+        {
+          "question": "What medications has the patient been prescribed?",
+          "expected_answer": "The patient has been prescribed Metformin 500 mg twice daily for diabetes, Atorvastatin 20 mg daily for cholesterol, and Lisinopril 10 mg daily for blood pressure.",
+          "expected_citations": ["prescription_001:metformin", "prescription_001:atorvastatin", "prescription_001:lisinopril"],
+          "expected_medical_concepts": ["metformin", "atorvastatin", "lisinopril", "polypharmacy"],
+          "difficulty": "easy",
+          "category": "medication",
+          "expected_confidence": 0.95
+        }
+      ]
+    }
+  ]
+}

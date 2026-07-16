@@ -1,0 +1,96 @@
+{
+  "name": "diabetes_samples",
+  "description": "Sample diabetes test datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "diabetes_prediabetes_001",
+      "document_type": "diabetes_report",
+      "document_text": "Diabetes Assessment: Fasting Plasma Glucose 112 mg/dL (normal <100, prediabetes 100-125, diabetes >126). HbA1c 6.1% (normal <5.7%, prediabetes 5.7-6.4%, diabetes >6.5%). Oral Glucose Tolerance Test (OGTT) 2-hour: 155 mg/dL (normal <140, prediabetes 140-199, diabetes >200). Impression: Impaired fasting glucose and impaired glucose tolerance consistent with prediabetes. Patient has metabolic syndrome risk factors. Lifestyle modification and metformin therapy should be discussed.",
+      "structured_extraction": {
+        "fasting_glucose": "112 mg/dL",
+        "hba1c": "6.1%",
+        "ogtt_2hr": "155 mg/dL",
+        "interpretation": "Prediabetes with impaired fasting glucose and impaired glucose tolerance"
+      },
+      "metadata": {
+        "patient_age": 50,
+        "patient_gender": "M",
+        "report_date": "2026-06-18"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's HbA1c and what does it indicate?",
+          "expected_answer": "HbA1c is 6.1%, which falls in the prediabetes range (5.7-6.4%). This indicates impaired glucose control over the preceding 2-3 months but does not meet the diabetes threshold of 6.5% or higher.",
+          "expected_citations": ["diabetes_prediabetes_001:hba1c"],
+          "expected_medical_concepts": ["hba1c", "prediabetes", "glycemic control"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What interventions are recommended for a patient diagnosed with prediabetes?",
+          "expected_answer": "For prediabetes (fasting glucose 112, HbA1c 6.1%, OGTT 155), the ADA recommends: (1) Lifestyle modification - at least 7% weight loss, 150 min/week moderate exercise, (2) Dietary counseling for carbohydrate reduction, (3) Consider metformin 500-850 mg twice daily if age <60, BMI >35, history of GDM, or if glucose continues to worsen despite lifestyle changes. Annual monitoring with repeat HbA1c and fasting glucose is recommended.",
+          "expected_citations": ["diabetes_prediabetes_001:fasting_glucose", "diabetes_prediabetes_001:hba1c", "diabetes_prediabetes_001:ogtt_2hr", "diabetes_prediabetes_001:interpretation"],
+          "expected_medical_concepts": ["prediabetes management", "metformin", "lifestyle modification", "ada guidelines", "diabetes prevention"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "diabetes_t2dm_002",
+      "document_type": "diabetes_report",
+      "document_text": "Diabetes Assessment: Fasting Plasma Glucose 198 mg/dL (diabetes >126). Random Plasma Glucose 245 mg/dL. HbA1c 9.8% (normal <5.7%, diabetes >6.5%). Urinalysis: Glucose 3+, Negative ketones, Negative microalbumin. Impression: New diagnosis of Type 2 Diabetes Mellitus with poor glycemic control (HbA1c 9.8%). Fasting glucose well above diagnostic threshold. No evidence of diabetic ketoacidosis. Negative microalbumin suggests no overt nephropathy at this time. Patient requires comprehensive diabetes education, dietary counseling, and initiation of pharmacotherapy.",
+      "structured_extraction": {
+        "fasting_glucose": "198 mg/dL",
+        "random_glucose": "245 mg/dL",
+        "hba1c": "9.8%",
+        "urine_glucose": "3+",
+        "urine_ketones": "Negative",
+        "microalbumin": "Negative",
+        "interpretation": "New diagnosis Type 2 Diabetes Mellitus, poor glycemic control, no DKA, no overt nephropathy"
+      },
+      "metadata": {
+        "patient_age": 60,
+        "patient_gender": "M",
+        "report_date": "2026-07-10"
+      },
+      "entries": [
+        {
+          "question": "Does this patient meet the diagnostic criteria for diabetes mellitus?",
+          "expected_answer": "Yes. The patient meets diagnostic criteria with both a fasting glucose of 198 mg/dL (threshold >126) and HbA1c of 9.8% (threshold >6.5%). Random glucose of 245 mg/dL with symptoms also meets criteria (threshold >200).",
+          "expected_citations": ["diabetes_t2dm_002:fasting_glucose", "diabetes_t2dm_002:hba1c", "diabetes_t2dm_002:random_glucose"],
+          "expected_medical_concepts": ["diabetes diagnosis", "fasting glucose", "hba1c", "ada diagnostic criteria"],
+          "difficulty": "easy",
+          "category": "diagnosis",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What pharmacotherapy should be initiated for newly diagnosed T2DM with HbA1c 9.8%?",
+          "expected_answer": "With HbA1c >9.0%, the ADA recommends: (1) Metformin extended-release 500 mg daily, titrating to 2000 mg daily as tolerated, PLUS (2) Consider combination therapy given high HbA1c - add a second agent such as an SGLT2 inhibitor (empagliflozin) or GLP-1 receptor agonist (semaglutide) for additional glycemic control and cardiovascular/renal benefits. Baseline kidney function, liver enzymes, and cardiovascular risk should be assessed. Diabetes self-management education (DSME) and medical nutrition therapy should be initiated concurrently.",
+          "expected_citations": ["diabetes_t2dm_002:hba1c", "diabetes_t2dm_002:interpretation"],
+          "expected_medical_concepts": ["metformin", "sglt2 inhibitor", "glp-1 agonist", "combination therapy", "ada guidelines", "diabetes pharmacotherapy"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.85
+        },
+        {
+          "question": "What evidence of complications is present or absent?",
+          "expected_answer": "No evidence of DKA (negative ketones) and no evidence of nephropathy (negative microalbumin). However, the elevated HbA1c suggests prolonged hyperglycemia. Screening for other complications should be initiated: dilated eye exam for retinopathy, foot exam for neuropathy, and baseline lipid panel. Given new diagnosis, these may be subclinical.",
+          "expected_citations": ["diabetes_t2dm_002:urine_ketones", "diabetes_t2dm_002:microalbumin", "diabetes_t2dm_002:hba1c"],
+          "expected_medical_concepts": ["diabetic ketoacidosis", "diabetic nephropathy", "diabetic retinopathy", "complication screening"],
+          "difficulty": "medium",
+          "category": "diagnosis",
+          "expected_confidence": 0.9
+        }
+      ]
+    }
+  ]
+}

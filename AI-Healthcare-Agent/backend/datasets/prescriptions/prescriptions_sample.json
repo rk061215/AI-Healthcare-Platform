@@ -1,0 +1,137 @@
+{
+  "name": "prescriptions_sample",
+  "description": "Sample prescription dataset for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "rx_met_001",
+      "document_type": "prescription",
+      "document_text": "Patient: John Miller, DOB: 05/12/1978. Prescription: Metformin Hydrochloride 500 mg extended-release tablets. Dispense #60. Sig: Take one tablet by mouth once daily with the evening meal. Refills: 3. Diagnosis: Type 2 Diabetes Mellitus (E11.9). Prescriber: Dr. Sarah Chen, MD.",
+      "structured_extraction": {
+        "medications": [
+          {"name": "Metformin Hydrochloride", "dosage": "500 mg", "form": "extended-release tablet", "frequency": "once daily", "instructions": "with evening meal", "quantity": 60, "refills": 3}
+        ],
+        "diagnosis": "Type 2 Diabetes Mellitus (E11.9)",
+        "prescriber": "Dr. Sarah Chen, MD"
+      },
+      "metadata": {
+        "patient_name": "John Miller",
+        "patient_age": 48,
+        "patient_gender": "M",
+        "report_date": "2026-07-01"
+      },
+      "entries": [
+        {
+          "question": "What is the dosage and frequency of Metformin prescribed?",
+          "expected_answer": "Metformin Hydrochloride 500 mg extended-release tablets, one tablet once daily with the evening meal. Dispensed 60 tablets with 3 refills.",
+          "expected_citations": ["rx_met_001:medications"],
+          "expected_medical_concepts": ["metformin", "type 2 diabetes", "dosage regimen"],
+          "difficulty": "easy",
+          "category": "medication",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What diagnosis is being treated with this prescription?",
+          "expected_answer": "The patient is being treated for Type 2 Diabetes Mellitus (ICD-10 code E11.9).",
+          "expected_citations": ["rx_met_001:diagnosis"],
+          "expected_medical_concepts": ["type 2 diabetes mellitus", "icd-10 coding", "antidiabetic therapy"],
+          "difficulty": "easy",
+          "category": "diagnosis",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "How many refills are authorized and what is the total duration of therapy?",
+          "expected_answer": "Three refills are authorized. With a 30-day supply per fill (60 tablets at 1 per day), the total therapy covers approximately 120 days or 4 months, assuming monthly dispensing.",
+          "expected_citations": ["rx_met_001:medications"],
+          "expected_medical_concepts": ["medication refills", "treatment duration", "medication adherence"],
+          "difficulty": "medium",
+          "category": "medication",
+          "expected_confidence": 0.88
+        }
+      ]
+    },
+    {
+      "document_id": "rx_ator_002",
+      "document_type": "prescription",
+      "document_text": "Patient: Susan Walker, DOB: 11/03/1965. Prescription: Atorvastatin Calcium 40 mg tablets. Dispense #30. Sig: Take one tablet by mouth daily at bedtime. Refills: 5. Diagnosis: Hyperlipidemia, Mixed (E78.2). Also noted: patient has history of coronary artery disease. LDL target <70 mg/dL. Prescriber: Dr. James Park, MD.",
+      "structured_extraction": {
+        "medications": [
+          {"name": "Atorvastatin Calcium", "dosage": "40 mg", "form": "tablet", "frequency": "daily", "instructions": "at bedtime", "quantity": 30, "refills": 5}
+        ],
+        "diagnosis": "Mixed Hyperlipidemia (E78.2)",
+        "prescriber": "Dr. James Park, MD",
+        "notes": "History of coronary artery disease. LDL target <70 mg/dL."
+      },
+      "metadata": {
+        "patient_name": "Susan Walker",
+        "patient_age": 61,
+        "patient_gender": "F",
+        "report_date": "2026-06-28"
+      },
+      "entries": [
+        {
+          "question": "What is the prescribed statin therapy and its indication?",
+          "expected_answer": "Atorvastatin Calcium 40 mg daily at bedtime for Mixed Hyperlipidemia (E78.2) in a patient with a history of coronary artery disease. The LDL target is less than 70 mg/dL, consistent with secondary prevention guidelines.",
+          "expected_citations": ["rx_ator_002:medications", "rx_ator_002:diagnosis", "rx_ator_002:notes"],
+          "expected_medical_concepts": ["atorvastatin", "hyperlipidemia", "coronary artery disease", "statin therapy", "secondary prevention"],
+          "difficulty": "medium",
+          "category": "medication",
+          "expected_confidence": 0.92
+        },
+        {
+          "question": "Why was a 40 mg dose of Atorvastatin selected instead of a lower dose?",
+          "expected_answer": "The 40 mg moderate-to-high intensity dose is appropriate given the patient has established coronary artery disease (secondary prevention) and a LDL target below 70 mg/dL. High-intensity statin therapy (Atorvastatin 40-80 mg) is guideline-recommended for patients with ASCVD.",
+          "expected_citations": ["rx_ator_002:medications", "rx_ator_002:notes"],
+          "expected_medical_concepts": ["high-intensity statin", "ascvd", "ldl cholesterol target", "secondary prevention"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "rx_amox_003",
+      "document_type": "prescription",
+      "document_text": "Patient: Emily Torres, DOB: 08/22/1995. Prescription: Amoxicillin 500 mg capsules. Dispense #21. Sig: Take one capsule by mouth three times daily for 7 days. Refills: 0. Diagnosis: Acute bacterial sinusitis (J01.90). Allergies: None reported. Prescriber: Dr. Lisa Nguyen, DO.",
+      "structured_extraction": {
+        "medications": [
+          {"name": "Amoxicillin", "dosage": "500 mg", "form": "capsule", "frequency": "three times daily", "instructions": "for 7 days", "quantity": 21, "refills": 0}
+        ],
+        "diagnosis": "Acute bacterial sinusitis (J01.90)",
+        "prescriber": "Dr. Lisa Nguyen, DO",
+        "allergies": "None reported"
+      },
+      "metadata": {
+        "patient_name": "Emily Torres",
+        "patient_age": 31,
+        "patient_gender": "F",
+        "report_date": "2026-07-05"
+      },
+      "entries": [
+        {
+          "question": "What antibiotic is prescribed and for what duration?",
+          "expected_answer": "Amoxicillin 500 mg, one capsule three times daily for 7 days (21 capsules total). No refills. Diagnosis: acute bacterial sinusitis.",
+          "expected_citations": ["rx_amox_003:medications", "rx_amox_003:diagnosis"],
+          "expected_medical_concepts": ["amoxicillin", "antibiotic therapy", "acute sinusitis"],
+          "difficulty": "easy",
+          "category": "medication",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "Is the antibiotic selection appropriate for acute bacterial sinusitis?",
+          "expected_answer": "Yes, Amoxicillin 500 mg three times daily for 5-7 days is a first-line empiric therapy for acute bacterial sinusitis per IDSA guidelines. The patient has no reported allergies. The 7-day duration is appropriate. The no-refill policy is correct for antibiotic courses to complete the full treatment.",
+          "expected_citations": ["rx_amox_003:medications", "rx_amox_003:diagnosis", "rx_amox_003:allergies"],
+          "expected_medical_concepts": ["antibiotic stewardship", "acute bacterial sinusitis", "id guidelines", "penicillin therapy"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.82
+        }
+      ]
+    }
+  ]
+}

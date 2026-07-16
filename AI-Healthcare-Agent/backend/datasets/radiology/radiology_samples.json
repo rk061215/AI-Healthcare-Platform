@@ -1,0 +1,90 @@
+{
+  "name": "radiology_samples",
+  "description": "Sample radiology report datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "cxr_pneumonia_001",
+      "document_type": "radiology_report",
+      "document_text": "CHEST X-RAY (PA and Lateral views)\nPatient: David Thompson, MRN: 77125\nDate: 2026-07-08\n\nIndication: Fever, cough, and dyspnea for 4 days. Suspect pneumonia.\n\nTechnique: Standard posterior-anterior and lateral chest radiograph.\n\nFindings:\nLungs: There is a dense, homogeneous opacity in the left lower lobe obscuring the left hemidiaphragm and left heart border. Air bronchograms are present within the opacity. No cavitation. The right lung is clear. No pleural effusion. No pneumothorax.\n\nCardiac: Cardiac silhouette is within normal limits. No cardiomegaly.\n\nMediastinum: Mediastinal contours are normal. No hilar or mediastinal lymphadenopathy.\n\nBones: No acute osseous abnormalities.\n\nImpression:\n1. Left lower lobe consolidation with air bronchograms, consistent with community-acquired pneumonia.\n2. No evidence of pleural effusion or pneumothorax.\n3. Recommend clinical correlation and follow-up radiograph in 6-8 weeks to document resolution.",
+      "structured_extraction": {
+        "study_type": "Chest X-ray (PA and Lateral)",
+        "indication": "Fever, cough, dyspnea 4 days",
+        "findings_lungs": "Left lower lobe consolidation with air bronchograms",
+        "findings_cardiac": "Normal cardiac silhouette",
+        "findings_pleural": "No pleural effusion",
+        "impression": "Left lower lobe community-acquired pneumonia",
+        "recommendation": "Follow-up radiograph in 6-8 weeks"
+      },
+      "metadata": {
+        "patient_age": 45,
+        "patient_gender": "M",
+        "report_date": "2026-07-08"
+      },
+      "entries": [
+        {
+          "question": "What are the key radiographic findings in this chest X-ray?",
+          "expected_answer": "Dense homogeneous opacity in the left lower lobe with air bronchograms, obscuring the left hemidiaphragm and left heart border. The right lung is clear. No pleural effusion or pneumothorax.",
+          "expected_citations": ["cxr_pneumonia_001:findings_lungs"],
+          "expected_medical_concepts": ["consolidation", "air bronchograms", "lobar pneumonia", "chest radiograph"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "How can you differentiate between pneumonia and atelectasis on chest X-ray?",
+          "expected_answer": "Pneumonia typically shows dense consolidation with air bronchograms, is often homogeneous, and obscures normal anatomy (silhouette sign). Atelectasis typically causes volume loss (crowding of fissures, mediastinal shift, elevation of hemidiaphragm) and appears as a wedge-shaped opacity. This case shows air bronchograms without significant volume loss, favoring pneumonia. The silhouette sign with the left heart border localizes the process to the lingula of the left upper lobe.",
+          "expected_citations": ["cxr_pneumonia_001:findings_lungs", "cxr_pneumonia_001:impression"],
+          "expected_medical_concepts": ["silhouette sign", "air bronchograms", "atelectasis vs consolidation", "radiographic signs"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "mri_lumbar_002",
+      "document_type": "radiology_report",
+      "document_text": "MRI LUMBAR SPINE WITHOUT CONTRAST\nPatient: Patricia Adams, MRN: 78342\nDate: 2026-07-11\n\nIndication: Chronic lower back pain with radicular symptoms radiating to left leg for 6 weeks. Positive straight leg raise test on left.\n\nTechnique: Sagittal T1, T2, STIR. Axial T1 and T2 sequences through lumbar spine.\n\nFindings:\n\nVertebral Bodies: Normal height and alignment. No fracture, no compression deformity. No marrow infiltrative process. Mild degenerative endplate changes at L4-L5 and L5-S1 (Modic type II).\n\nDisc Spaces:\n- L1-L2: Mild disc desiccation. No herniation.\n- L2-L3: Normal.\n- L3-L4: Small diffuse disc bulge without central canal stenosis.\n- L4-L5: Moderate central and left paracentral disc extrusion measuring 8 mm AP, causing moderate left lateral recess stenosis and impingement on the traversing left L5 nerve root. Mild bilateral neural foraminal narrowing.\n- L5-S1: Mild diffuse disc bulge with small right paracentral protrusion. No significant central canal or foraminal stenosis.\n\nCanal: Thecal sac demonstrates mild ventral compression at L4-L5. AP canal diameter at L4-L5 is 10 mm (mild stenosis).\n\nConus Medullaris: Normal signal and position at L1.\n\nFacet Joints: Mild bilateral facet arthropathy at L4-L5 and L5-S1.\n\nImpression:\n1. L4-L5 central and left paracentral disc extrusion with impingement on the left L5 nerve root, correlating with the patient's left leg radicular symptoms.\n2. Mild degenerative disc disease at L4-L5 and L5-S1 with Modic type II endplate changes.\n3. Mild central canal stenosis at L4-L5.\n4. No high-grade stenosis or cauda equina syndrome.",
+      "structured_extraction": {
+        "study_type": "MRI Lumbar Spine without contrast",
+        "indication": "Chronic LBP with left leg radicular symptoms",
+        "critical_finding": "L4-L5 disc extrusion with left L5 nerve root impingement",
+        "disc_l4l5": "8 mm central/left paracentral extrusion, left lateral recess stenosis, left L5 nerve root impingement",
+        "canal_stenosis": "Mild (AP diameter 10 mm at L4-L5)",
+        "other_findings": "Mild degenerative disc disease, Modic type II changes, facet arthropathy",
+        "impression": "L4-L5 disc extrusion with left L5 radiculopathy"
+      },
+      "metadata": {
+        "patient_age": 55,
+        "patient_gender": "F",
+        "report_date": "2026-07-11"
+      },
+      "entries": [
+        {
+          "question": "What is the primary abnormality found on this MRI?",
+          "expected_answer": "An 8 mm central and left paracentral disc extrusion at L4-L5 causing moderate left lateral recess stenosis and impingement on the traversing left L5 nerve root. This explains the patient's left leg radicular symptoms.",
+          "expected_citations": ["mri_lumbar_002:critical_finding", "mri_lumbar_002:disc_l4l5"],
+          "expected_medical_concepts": ["disc extrusion", "lumbar radiculopathy", "nerve root impingement", "l5 nerve root"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the difference between disc bulge, protrusion, and extrusion?",
+          "expected_answer": "Disc bulge: symmetric, broad-based extension of disc beyond vertebral margins (<180 degrees of circumference). Disc protrusion: focal, disc extends beyond margins with base wider than the herniated portion. Disc extrusion: disc material extends beyond margins with the base narrower than the herniated portion or there is no connection to the disc space. This case shows a true extrusion at L4-L5 (8 mm), which is more likely to cause significant nerve root compression and often requires surgical consideration if conservative management fails.",
+          "expected_citations": ["mri_lumbar_002:disc_l4l5", "mri_lumbar_002:impression"],
+          "expected_medical_concepts": ["disc herniation classification", "disc extrusion vs protrusion", "radiculopathy", "lumbar spine anatomy"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    }
+  ]
+}

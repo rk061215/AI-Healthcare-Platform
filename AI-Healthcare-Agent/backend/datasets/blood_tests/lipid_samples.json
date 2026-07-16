@@ -1,0 +1,89 @@
+{
+  "name": "lipid_samples",
+  "description": "Sample lipid profile datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "lipid_normal_001",
+      "document_type": "lipid_profile",
+      "document_text": "Lipid Profile: Total Cholesterol 170 mg/dL (desirable <200), LDL Cholesterol 95 mg/dL (optimal <100), HDL Cholesterol 55 mg/dL (normal >40 for men, >50 for women), Triglycerides 120 mg/dL (normal <150). Total Cholesterol/HDL Ratio 3.1 (desirable <5.0). Impression: All lipid parameters are within desirable ranges. Cardiovascular risk appears low based on lipid panel alone.",
+      "structured_extraction": {
+        "total_cholesterol": "170 mg/dL",
+        "ldl": "95 mg/dL",
+        "hdl": "55 mg/dL",
+        "triglycerides": "120 mg/dL",
+        "total_cholesterol_hdl_ratio": "3.1",
+        "interpretation": "All parameters within desirable ranges. Low cardiovascular risk based on lipids."
+      },
+      "metadata": {
+        "patient_age": 32,
+        "patient_gender": "F",
+        "report_date": "2026-05-15"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's LDL cholesterol level?",
+          "expected_answer": "The patient's LDL cholesterol is 95 mg/dL, which is within the optimal range of less than 100 mg/dL.",
+          "expected_citations": ["lipid_normal_001:ldl"],
+          "expected_medical_concepts": ["ldl cholesterol", "lipid profile"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the overall cardiovascular risk assessment from this lipid panel?",
+          "expected_answer": "Total cholesterol 170 mg/dL, LDL 95 mg/dL, HDL 55 mg/dL, triglycerides 120 mg/dL, and total cholesterol/HDL ratio of 3.1. All values are within desirable ranges, indicating low cardiovascular risk based on lipid parameters alone.",
+          "expected_citations": ["lipid_normal_001:total_cholesterol", "lipid_normal_001:ldl", "lipid_normal_001:hdl", "lipid_normal_001:triglycerides", "lipid_normal_001:interpretation"],
+          "expected_medical_concepts": ["cardiovascular risk", "lipid panel", "desirable range"],
+          "difficulty": "medium",
+          "category": "lab_result",
+          "expected_confidence": 0.9
+        }
+      ]
+    },
+    {
+      "document_id": "lipid_highrisk_002",
+      "document_type": "lipid_profile",
+      "document_text": "Lipid Profile: Total Cholesterol 285 mg/dL (high, desirable <200), LDL Cholesterol 195 mg/dL (very high, optimal <100), HDL Cholesterol 32 mg/dL (low, >40 recommended), Triglycerides 290 mg/dL (high, normal <150). Non-HDL Cholesterol 253 mg/dL (high, goal <130). Total Cholesterol/HDL Ratio 8.9. Impression: Severe hyperlipidemia with high LDL, low HDL, and elevated triglycerides. Patient meets criteria for familial hypercholesterolemia screening. High cardiovascular risk.",
+      "structured_extraction": {
+        "total_cholesterol": "285 mg/dL",
+        "ldl": "195 mg/dL",
+        "hdl": "32 mg/dL",
+        "triglycerides": "290 mg/dL",
+        "non_hdl_cholesterol": "253 mg/dL",
+        "total_cholesterol_hdl_ratio": "8.9",
+        "interpretation": "Severe hyperlipidemia. Consider familial hypercholesterolemia. High cardiovascular risk."
+      },
+      "metadata": {
+        "patient_age": 44,
+        "patient_gender": "M",
+        "report_date": "2026-06-22"
+      },
+      "entries": [
+        {
+          "question": "What are the key abnormalities in this lipid profile?",
+          "expected_answer": "Total cholesterol 285 mg/dL (high), LDL 195 mg/dL (very high), HDL 32 mg/dL (low), triglycerides 290 mg/dL (high), non-HDL cholesterol 253 mg/dL (high), and total cholesterol/HDL ratio 8.9 (high). All major lipid parameters are abnormal.",
+          "expected_citations": ["lipid_highrisk_002:total_cholesterol", "lipid_highrisk_002:ldl", "lipid_highrisk_002:hdl", "lipid_highrisk_002:triglycerides"],
+          "expected_medical_concepts": ["hyperlipidemia", "ldl cholesterol", "hdl cholesterol", "triglycerides"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "Should this patient be screened for familial hypercholesterolemia and what are the diagnostic criteria?",
+          "expected_answer": "Yes, with LDL 195 mg/dL at age 44, the patient meets criteria for familial hypercholesterolemia screening. The Dutch Lipid Clinic Network criteria include: LDL >190 mg/dL (3 points), premature CAD in patient or family, tendon xanthomas, or genetic testing. A score >8 is definite FH. Treatment would require high-intensity statin (Atorvastatin 40-80 mg or Rosuvastatin 20-40 mg) often with ezetimibe.",
+          "expected_citations": ["lipid_highrisk_002:ldl", "lipid_highrisk_002:interpretation"],
+          "expected_medical_concepts": ["familial hypercholesterolemia", "dutch lipid clinic criteria", "high-intensity statin", "ezetimibe", "genetic screening"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.83
+        }
+      ]
+    }
+  ]
+}

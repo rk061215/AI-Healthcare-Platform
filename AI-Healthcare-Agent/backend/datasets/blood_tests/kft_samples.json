@@ -1,0 +1,98 @@
+{
+  "name": "kft_samples",
+  "description": "Sample kidney function test datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "kft_normal_001",
+      "document_type": "kft_report",
+      "document_text": "Kidney Function Tests: Serum Creatinine 0.85 mg/dL (normal 0.6-1.2), BUN 14 mg/dL (normal 7-20), BUN/Creatinine Ratio 16.5. eGFR (CKD-EPI) 98 mL/min/1.73m2 (normal >60). Serum Sodium 140 mEq/L, Serum Potassium 4.1 mEq/L, Serum Chloride 102 mEq/L, Serum Bicarbonate 24 mEq/L. Serum Calcium 9.5 mg/dL, Serum Phosphorus 3.8 mg/dL. Impression: Normal kidney function with preserved eGFR. Normal electrolytes.",
+      "structured_extraction": {
+        "serum_creatinine": "0.85 mg/dL",
+        "bun": "14 mg/dL",
+        "bun_creatinine_ratio": 16.5,
+        "egfr": "98 mL/min/1.73m2",
+        "sodium": "140 mEq/L",
+        "potassium": "4.1 mEq/L",
+        "chloride": "102 mEq/L",
+        "bicarbonate": "24 mEq/L",
+        "calcium": "9.5 mg/dL",
+        "phosphorus": "3.8 mg/dL",
+        "interpretation": "Normal kidney function, preserved eGFR, normal electrolytes"
+      },
+      "metadata": {
+        "patient_age": 38,
+        "patient_gender": "F",
+        "report_date": "2026-05-20"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's estimated GFR and what does it indicate?",
+          "expected_answer": "The eGFR is 98 mL/min/1.73m2 using the CKD-EPI equation, which is well above 60 mL/min/1.73m2 and indicates normal kidney function (Stage G1).",
+          "expected_citations": ["kft_normal_001:egfr"],
+          "expected_medical_concepts": ["egfr", "ckd-epi", "kidney function"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "Are the patient's electrolytes within normal limits?",
+          "expected_answer": "Yes, all electrolytes are normal: sodium 140 mEq/L, potassium 4.1 mEq/L, chloride 102 mEq/L, bicarbonate 24 mEq/L. Serum calcium 9.5 mg/dL and phosphorus 3.8 mg/dL are also within normal limits.",
+          "expected_citations": ["kft_normal_001:sodium", "kft_normal_001:potassium", "kft_normal_001:calcium", "kft_normal_001:phosphorus"],
+          "expected_medical_concepts": ["electrolytes", "normal range", "kidney function"],
+          "difficulty": "medium",
+          "category": "lab_result",
+          "expected_confidence": 0.9
+        }
+      ]
+    },
+    {
+      "document_id": "kft_ckd_002",
+      "document_type": "kft_report",
+      "document_text": "Kidney Function Tests: Serum Creatinine 2.8 mg/dL (elevated, normal 0.6-1.2), BUN 48 mg/dL (elevated, normal 7-20), BUN/Creatinine Ratio 17.1. eGFR (CKD-EPI) 22 mL/min/1.73m2 (severely reduced, normal >60). Serum Sodium 136 mEq/L, Serum Potassium 5.6 mEq/L (elevated, normal 3.5-5.1), Serum Chloride 108 mEq/L, Serum Bicarbonate 18 mEq/L (low, normal 22-29). Serum Calcium 8.8 mg/dL (low normal), Serum Phosphorus 5.6 mg/dL (elevated, normal 2.5-4.5). Impression: Chronic Kidney Disease Stage 4 (eGFR 15-29). Hyperkalemia. Metabolic acidosis. Hyperphosphatemia. Patient requires urgent nephrology referral, dietary potassium and phosphate restriction, and evaluation for renal replacement therapy.",
+      "structured_extraction": {
+        "serum_creatinine": "2.8 mg/dL",
+        "bun": "48 mg/dL",
+        "bun_creatinine_ratio": 17.1,
+        "egfr": "22 mL/min/1.73m2",
+        "sodium": "136 mEq/L",
+        "potassium": "5.6 mEq/L",
+        "chloride": "108 mEq/L",
+        "bicarbonate": "18 mEq/L",
+        "calcium": "8.8 mg/dL",
+        "phosphorus": "5.6 mg/dL",
+        "interpretation": "CKD Stage 4 with hyperkalemia, metabolic acidosis, hyperphosphatemia. Urgent nephrology referral needed."
+      },
+      "metadata": {
+        "patient_age": 67,
+        "patient_gender": "M",
+        "report_date": "2026-07-12"
+      },
+      "entries": [
+        {
+          "question": "What stage of chronic kidney disease is indicated by these results?",
+          "expected_answer": "eGFR of 22 mL/min/1.73m2 indicates Stage 4 CKD (eGFR 15-29 mL/min/1.73m2). Stage 4 is severe kidney dysfunction requiring preparation for renal replacement therapy (dialysis or transplant).",
+          "expected_citations": ["kft_ckd_002:egfr", "kft_ckd_002:interpretation"],
+          "expected_medical_concepts": ["chronic kidney disease", "ckd stage 4", "egfr", "renal replacement therapy"],
+          "difficulty": "medium",
+          "category": "diagnosis",
+          "expected_confidence": 0.92
+        },
+        {
+          "question": "What are the immediate clinical concerns based on the electrolyte abnormalities?",
+          "expected_answer": "Three critical issues: (1) Hyperkalemia (5.6 mEq/L) risks cardiac arrhythmias and requires ECG monitoring and potassium-lowering therapy. (2) Metabolic acidosis (bicarbonate 18 mEq/L) may require oral bicarbonate supplementation. (3) Hyperphosphatemia (5.6 mg/dL) with low-normal calcium (8.8) indicates secondary hyperparathyroidism of CKD and requires phosphate binders. All are common complications of advanced CKD.",
+          "expected_citations": ["kft_ckd_002:potassium", "kft_ckd_002:bicarbonate", "kft_ckd_002:phosphorus", "kft_ckd_002:calcium"],
+          "expected_medical_concepts": ["hyperkalemia", "metabolic acidosis", "hyperphosphatemia", "secondary hyperparathyroidism", "ckd-mineral bone disorder"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.88
+        }
+      ]
+    }
+  ]
+}

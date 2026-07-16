@@ -1,0 +1,11 @@
+from app.schemas.auth import *  # noqa: F401, F403
+from app.schemas.patient import *  # noqa: F401, F403
+from app.schemas.doctor import *  # noqa: F401, F403
+from app.schemas.medicine import *  # noqa: F401, F403
+from app.schemas.report import *  # noqa: F401, F403
+from app.schemas.chat import *  # noqa: F401, F403
+from app.schemas.adherence import *  # noqa: F401, F403
+from app.schemas.emergency import *  # noqa: F401, F403
+from app.schemas.summary import *  # noqa: F401, F403
+from app.schemas.appointment import *  # noqa: F401, F403
+from app.schemas.document import *  # noqa: F401, F403

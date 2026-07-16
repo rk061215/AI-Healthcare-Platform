@@ -1,0 +1,88 @@
+{
+  "name": "thyroid_samples",
+  "description": "Sample thyroid function test datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "thyroid_hypo_001",
+      "document_type": "thyroid_profile",
+      "document_text": "Thyroid Function Tests: TSH 12.8 uIU/mL (elevated, normal 0.4-4.5), Free T4 0.5 ng/dL (low, normal 0.8-1.8), Free T3 1.8 pg/mL (low, normal 2.3-4.2). Anti-TPO Antibodies 450 IU/mL (elevated, normal <35). Anti-Thyroglobulin Antibodies 120 IU/mL (elevated, normal <40). Impression: Overt primary hypothyroidism with positive thyroid autoantibodies consistent with Hashimoto's thyroiditis. Patient requires levothyroxine replacement therapy.",
+      "structured_extraction": {
+        "tsh": "12.8 uIU/mL",
+        "free_t4": "0.5 ng/dL",
+        "free_t3": "1.8 pg/mL",
+        "anti_tpo": "450 IU/mL",
+        "anti_thyroglobulin": "120 IU/mL",
+        "interpretation": "Overt primary hypothyroidism due to Hashimoto's thyroiditis"
+      },
+      "metadata": {
+        "patient_age": 42,
+        "patient_gender": "F",
+        "report_date": "2026-06-05"
+      },
+      "entries": [
+        {
+          "question": "What is the thyroid diagnosis based on these results?",
+          "expected_answer": "Overt primary hypothyroidism: TSH is markedly elevated at 12.8 uIU/mL with low Free T4 (0.5 ng/dL) and low Free T3 (1.8 pg/mL). The elevated anti-TPO (450 IU/mL) and anti-thyroglobulin (120 IU/mL) antibodies confirm Hashimoto's thyroiditis as the underlying cause.",
+          "expected_citations": ["thyroid_hypo_001:tsh", "thyroid_hypo_001:free_t4", "thyroid_hypo_001:anti_tpo", "thyroid_hypo_001:interpretation"],
+          "expected_medical_concepts": ["primary hypothyroidism", "hashimoto's thyroiditis", "anti-tpo antibodies", "thyroid autoimmunity"],
+          "difficulty": "medium",
+          "category": "diagnosis",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the recommended treatment and initial levothyroxine dose?",
+          "expected_answer": "Levothyroxine replacement therapy is indicated. For overt hypothyroidism in a 42-year-old woman without cardiac disease, the starting dose is typically 1.6 mcg/kg/day (approx 75-100 mcg daily). Dose adjustments are made every 6-8 weeks based on TSH levels targeting a goal TSH of 0.5-2.5 mIU/mL. Levothyroxine should be taken on an empty stomach 30-60 minutes before breakfast.",
+          "expected_citations": ["thyroid_hypo_001:tsh", "thyroid_hypo_001:free_t4"],
+          "expected_medical_concepts": ["levothyroxine", "thyroid hormone replacement", "tsh monitoring", "dosing guidelines"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "thyroid_hyper_002",
+      "document_type": "thyroid_profile",
+      "document_text": "Thyroid Function Tests: TSH 0.01 uIU/mL (suppressed, normal 0.4-4.5), Free T4 2.8 ng/dL (elevated, normal 0.8-1.8), Free T3 6.5 pg/mL (elevated, normal 2.3-4.2). Anti-TPO Antibodies 25 IU/mL (normal <35). TSH Receptor Antibodies (TRAb) 8.5 IU/L (elevated, normal <1.75). Impression: Overt hyperthyroidism with suppressed TSH, elevated T4 and T3. Positive TRAb indicates Graves' disease as the etiology. Patient may present with tachycardia, weight loss, heat intolerance, and tremors.",
+      "structured_extraction": {
+        "tsh": "0.01 uIU/mL",
+        "free_t4": "2.8 ng/dL",
+        "free_t3": "6.5 pg/mL",
+        "anti_tpo": "25 IU/mL",
+        "trab": "8.5 IU/L",
+        "interpretation": "Overt hyperthyroidism due to Graves' disease"
+      },
+      "metadata": {
+        "patient_age": 35,
+        "patient_gender": "F",
+        "report_date": "2026-07-03"
+      },
+      "entries": [
+        {
+          "question": "What is the diagnosis based on this thyroid profile?",
+          "expected_answer": "Overt hyperthyroidism: suppressed TSH (<0.01), elevated Free T4 (2.8) and Free T3 (6.5). The positive TSH receptor antibodies (TRAb 8.5 IU/L) confirm Graves' disease as the underlying autoimmune etiology.",
+          "expected_citations": ["thyroid_hyper_002:tsh", "thyroid_hyper_002:free_t4", "thyroid_hyper_002:free_t3", "thyroid_hyper_002:trab", "thyroid_hyper_002:interpretation"],
+          "expected_medical_concepts": ["hyperthyroidism", "graves disease", "tsh receptor antibodies", "thyrotoxicosis"],
+          "difficulty": "medium",
+          "category": "diagnosis",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What treatment options are available for Graves' disease and how would you choose?",
+          "expected_answer": "Three treatment modalities: (1) Antithyroid drugs (methimazole 10-30 mg daily) as first-line for most patients, especially first pregnancy trimester - avoid PTU due to hepatotoxicity except in first trimester. (2) Radioactive iodine ablation (I-131) - contraindicated in pregnancy/breastfeeding. (3) Thyroidectomy - for large goiters, compressive symptoms, or failed medical therapy. Beta-blockers (propranolol) are used for symptom control. For this 35-year-old woman, methimazole with beta-blocker is appropriate first-line, with thyroid function monitored every 4-6 weeks.",
+          "expected_citations": ["thyroid_hyper_002:trab", "thyroid_hyper_002:interpretation"],
+          "expected_medical_concepts": ["antithyroid drugs", "methimazole", "radioactive iodine", "thyroidectomy", "beta blockers", "graves disease treatment"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.85
+        }
+      ]
+    }
+  ]
+}

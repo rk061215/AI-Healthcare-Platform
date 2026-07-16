@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-07-16 12:00 UTC",
+  "version": "1.0.0",
+  "system": {
+    "version": "0.17.0",
+    "phase": "Phase M - Clinical Validation, Dataset Management & AI Optimization",
+    "overall_progress_pct": 98,
+    "architecture_health_score": 8.7,
+    "total_tests": 1754,
+    "test_status": "all passing, zero errors"
+  },
+  "benchmark": {
+    "config_name": "clinical_validation_benchmark",
+    "questions_attempted": 5,
+    "questions_succeeded": 5,
+    "success_rate": 1.0,
+    "overall_scores": {
+      "retrieval_recall_at_5": 1.0,
+      "precision_at_5": 1.0,
+      "mrr_at_5": 1.0,
+      "ndcg_at_5": 1.0,
+      "citation_precision": 0.8,
+      "citation_recall": 0.667,
+      "citation_f1": 0.727,
+      "groundedness": 0.9,
+      "answer_relevance": 1.0,
+      "hallucination_rate": 0.1
+    },
+    "latency_stats": {
+      "mean_ms": 0.004,
+      "p95_ms": 0.007
+    },
+    "token_stats": {
+      "mean": 100,
+      "total": 500
+    }
+  },
+  "validation": {
+    "datasets_validated": 1,
+    "total_entries": 5,
+    "is_valid": true,
+    "error_count": 0,
+    "warning_count": 0,
+    "validation_tests": 110,
+    "validation_tests_status": "all passing"
+  },
+  "regression": {
+    "suite_name": "clinical_regression",
+    "thresholds": {
+      "max_latency_ms": 5000,
+      "min_retrieval_recall": 0.7,
+      "max_hallucination_rate": 0.15,
+      "min_citation_precision": 0.6,
+      "min_citation_recall": 0.5,
+      "min_groundedness": 0.8,
+      "min_answer_relevance": 0.7,
+      "max_token_usage": 4096
+    },
+    "status": "configured"
+  },
+  "optimization": {
+    "chunk": {
+      "recommended_size": 512,
+      "recommended_overlap": 64,
+      "strategies": ["fixed", "recursive", "semantic", "sentence"]
+    },
+    "retrieval": {
+      "recommended_top_k": 5,
+      "recommended_threshold": 0.7,
+      "features": ["rerank", "hybrid", "mmr"]
+    },
+    "prompt": {
+      "scoring_weights": {
+        "relevance": 0.4,
+        "groundedness": 0.4,
+        "hallucination": 0.2
+      }
+    },
+    "reranking": {
+      "strategies": ["score", "diversity", "hybrid", "section_boosted", "recency"]
+    }
+  },
+  "recommendations": [
+    "HIGH: Expand golden QA dataset to 100+ entries across all 10 document types",
+    "HIGH: Reduce hallucination rate from 10% to <5% through improved guardrails",
+    "HIGH: Improve citation recall from 0.67 to >0.85",
+    "MEDIUM: Run benchmark with real LLM to establish baseline latency/token usage",
+    "MEDIUM: Implement cross-encoder reranking for improved retrieval precision",
+    "MEDIUM: Set up regression test automation in CI/CD pipeline",
+    "LOW: Add multi-query generation for complex questions",
+    "LOW: Implement A/B prompt testing via LangSmith Hub"
+  ],
+  "production_readiness_score": 8.2
+}

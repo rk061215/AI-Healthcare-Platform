@@ -1,0 +1,42 @@
+groups:
+  - name: ai-healthcare-critical
+    rules:
+      - alert: ServiceDown
+        expr: up{job="ai-healthcare-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI Healthcare backend is down"
+
+      - alert: HighErrorRate
+        expr: rate(http_errors_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx error rate > 5%"
+
+      - alert: LLMBudgetExceeded
+        expr: llm_cost_daily > 50
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: "Daily LLM budget exceeded ($50)"
+
+      - alert: ChatLatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{path="/api/v1/chat/message"}[5m])) > 8
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Chat p95 latency > 8s"
+
+      - alert: SlowPipelineQueue
+        expr: pipeline_queue_depth > 100
+        for: 5m
+        labels:
+          severity: medium
+        annotations:
+          summary: "Document pipeline queue depth > 100"

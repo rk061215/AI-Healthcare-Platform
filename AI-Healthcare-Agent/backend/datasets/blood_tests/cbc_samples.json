@@ -1,0 +1,105 @@
+{
+  "name": "cbc_samples",
+  "description": "Sample complete blood count datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "cbc_anemia_001",
+      "document_type": "cbc_report",
+      "document_text": "Complete Blood Count: WBC 6.2 x10^3/uL (normal 4.0-11.0), RBC 3.8 x10^6/uL (normal 4.5-5.5), Hemoglobin 10.1 g/dL (normal 13.5-17.5), Hematocrit 30.5% (normal 38-50%), Platelets 310 x10^3/uL (normal 150-450). Differential: Neutrophils 62%, Lymphocytes 28%, Monocytes 6%, Eosinophils 3%, Basophils 1%. Impression: Microcytic anemia, consistent with iron deficiency. RBC indices: MCV 72 fL, MCH 24 pg, MCHC 33 g/dL.",
+      "structured_extraction": {
+        "wbc": "6.2 x10^3/uL",
+        "rbc": "3.8 x10^6/uL",
+        "hemoglobin": "10.1 g/dL",
+        "hematocrit": "30.5%",
+        "platelets": "310 x10^3/uL",
+        "neutrophils": "62%",
+        "lymphocytes": "28%",
+        "mcv": "72 fL",
+        "mch": "24 pg",
+        "mchc": "33 g/dL",
+        "interpretation": "Microcytic anemia, consistent with iron deficiency"
+      },
+      "metadata": {
+        "patient_age": 34,
+        "patient_gender": "F",
+        "report_date": "2026-06-20"
+      },
+      "entries": [
+        {
+          "question": "What is the patient's hemoglobin level and is it abnormal?",
+          "expected_answer": "The patient's hemoglobin is 10.1 g/dL, which is below the normal range of 13.5-17.5 g/dL, indicating anemia.",
+          "expected_citations": ["cbc_anemia_001:hemoglobin"],
+          "expected_medical_concepts": ["hemoglobin", "anemia", "complete blood count"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What type of anemia is suggested by the RBC indices?",
+          "expected_answer": "Microcytic anemia is suggested with MCV 72 fL (normal 80-100 fL) and MCH 24 pg (normal 27-34 pg), consistent with iron deficiency anemia. The low MCV, MCH, and hemoglobin with a history that would warrant ferritin and iron studies.",
+          "expected_citations": ["cbc_anemia_001:mcv", "cbc_anemia_001:mch", "cbc_anemia_001:interpretation"],
+          "expected_medical_concepts": ["microcytic anemia", "iron deficiency anemia", "rbc indices", "mcv", "mch"],
+          "difficulty": "medium",
+          "category": "diagnosis",
+          "expected_confidence": 0.9
+        },
+        {
+          "question": "What follow-up tests should be considered given these findings?",
+          "expected_answer": "Given the microcytic anemia findings, recommended follow-up tests include serum ferritin, serum iron, total iron binding capacity (TIBC), transferrin saturation, and possibly hemoglobin electrophoresis to rule out thalassemia. Ferritin is the most specific test for iron deficiency.",
+          "expected_citations": ["cbc_anemia_001:mcv", "cbc_anemia_001:interpretation"],
+          "expected_medical_concepts": ["ferritin", "iron studies", "thalassemia", "anemia workup", "differential diagnosis"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    },
+    {
+      "document_id": "cbc_infection_002",
+      "document_type": "cbc_report",
+      "document_text": "Complete Blood Count: WBC 14.2 x10^3/uL (elevated, normal 4.0-11.0), RBC 5.0 x10^6/uL, Hemoglobin 13.8 g/dL, Hematocrit 41%, Platelets 450 x10^3/uL (elevated, normal 150-450). Differential: Neutrophils 78% (elevated), Lymphocytes 12%, Monocytes 5%, Eosinophils 3%, Basophils 2%. Absolute neutrophil count 11,076 cells/uL. Impression: Leukocytosis with neutrophilia, reactive thrombocytosis. Findings consistent with acute bacterial infection or inflammatory process.",
+      "structured_extraction": {
+        "wbc": "14.2 x10^3/uL",
+        "rbc": "5.0 x10^6/uL",
+        "hemoglobin": "13.8 g/dL",
+        "hematocrit": "41%",
+        "platelets": "450 x10^3/uL",
+        "neutrophils": "78%",
+        "lymphocytes": "12%",
+        "anc": "11,076 cells/uL",
+        "interpretation": "Leukocytosis with neutrophilia, reactive thrombocytosis. Consistent with acute bacterial infection."
+      },
+      "metadata": {
+        "patient_age": 52,
+        "patient_gender": "M",
+        "report_date": "2026-07-02"
+      },
+      "entries": [
+        {
+          "question": "What abnormalities are present in this CBC?",
+          "expected_answer": "Elevated WBC (14.2 x10^3/uL), elevated neutrophils (78%), elevated absolute neutrophil count (11,076 cells/uL), and borderline elevated platelets (450 x10^3/uL). This pattern is consistent with an acute bacterial infection or inflammatory process.",
+          "expected_citations": ["cbc_infection_002:wbc", "cbc_infection_002:neutrophils", "cbc_infection_002:anc", "cbc_infection_002:platelets", "cbc_infection_002:interpretation"],
+          "expected_medical_concepts": ["leukocytosis", "neutrophilia", "reactive thrombocytosis", "bacterial infection"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the significance of the reactive thrombocytosis alongside leukocytosis?",
+          "expected_answer": "Reactive (secondary) thrombocytosis with platelets at 450 x10^3/uL is a common acute-phase response to infection or inflammation. The combination with leukocytosis and neutrophilia strongly suggests an ongoing infectious or inflammatory process. The platelet elevation is typically mild and resolves with treatment of the underlying condition.",
+          "expected_citations": ["cbc_infection_002:platelets", "cbc_infection_002:interpretation"],
+          "expected_medical_concepts": ["reactive thrombocytosis", "acute phase response", "infection", "inflammation"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "name": "lft_samples",
+  "description": "Sample liver function test datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "lft_normal_001",
+      "document_type": "lft_report",
+      "document_text": "Liver Function Tests: Total Bilirubin 0.8 mg/dL (normal 0.1-1.2), Direct Bilirubin 0.2 mg/dL, ALT (SGPT) 28 U/L (normal 7-56), AST (SGOT) 24 U/L (normal 10-40), ALP (Alkaline Phosphatase) 72 U/L (normal 44-147), Total Protein 7.1 g/dL (normal 6.0-8.3), Albumin 4.2 g/dL (normal 3.5-5.0), Globulin 2.9 g/dL, A/G Ratio 1.4. GGT 32 U/L (normal 8-61). Impression: All liver function parameters are within normal limits.",
+      "structured_extraction": {
+        "total_bilirubin": "0.8 mg/dL",
+        "direct_bilirubin": "0.2 mg/dL",
+        "alt": "28 U/L",
+        "ast": "24 U/L",
+        "alp": "72 U/L",
+        "total_protein": "7.1 g/dL",
+        "albumin": "4.2 g/dL",
+        "globulin": "2.9 g/dL",
+        "ggt": "32 U/L",
+        "interpretation": "All parameters within normal limits"
+      },
+      "metadata": {
+        "patient_age": 29,
+        "patient_gender": "F",
+        "report_date": "2026-04-10"
+      },
+      "entries": [
+        {
+          "question": "Are the liver enzymes within normal range?",
+          "expected_answer": "Yes, ALT 28 U/L, AST 24 U/L, ALP 72 U/L, and GGT 32 U/L are all within their respective normal ranges. No evidence of hepatocellular or cholestatic injury.",
+          "expected_citations": ["lft_normal_001:alt", "lft_normal_001:ast", "lft_normal_001:alp", "lft_normal_001:ggt"],
+          "expected_medical_concepts": ["liver enzymes", "alt", "ast", "alkaline phosphatase"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the synthetic function of the liver based on these results?",
+          "expected_answer": "Liver synthetic function appears normal. Total protein 7.1 g/dL, albumin 4.2 g/dL, and normal coagulation factors (not measured here but indirectly supported). The A/G ratio of 1.4 is within the normal range (1.0-2.0), indicating preserved hepatic synthetic capacity.",
+          "expected_citations": ["lft_normal_001:total_protein", "lft_normal_001:albumin"],
+          "expected_medical_concepts": ["liver synthetic function", "albumin", "a/g ratio", "hepatic function"],
+          "difficulty": "medium",
+          "category": "lab_result",
+          "expected_confidence": 0.88
+        }
+      ]
+    },
+    {
+      "document_id": "lft_abnormal_002",
+      "document_type": "lft_report",
+      "document_text": "Liver Function Tests: Total Bilirubin 3.4 mg/dL (elevated, normal 0.1-1.2), Direct Bilirubin 2.1 mg/dL (elevated), Indirect Bilirubin 1.3 mg/dL. ALT (SGPT) 185 U/L (elevated, normal 7-56), AST (SGOT) 210 U/L (elevated, normal 10-40), ALP 180 U/L (elevated, normal 44-147), GGT 165 U/L (elevated, normal 8-61). Total Protein 6.8 g/dL, Albumin 3.2 g/dL (low, normal 3.5-5.0), Globulin 3.6 g/dL. AST/ALT Ratio 1.14. Impression: Mixed hepatocellular and cholestatic pattern of liver injury. Elevated bilirubin with both direct and indirect components. Patient should be evaluated for acute hepatitis, biliary obstruction, and alcoholic liver disease.",
+      "structured_extraction": {
+        "total_bilirubin": "3.4 mg/dL",
+        "direct_bilirubin": "2.1 mg/dL",
+        "indirect_bilirubin": "1.3 mg/dL",
+        "alt": "185 U/L",
+        "ast": "210 U/L",
+        "alp": "180 U/L",
+        "ggt": "165 U/L",
+        "total_protein": "6.8 g/dL",
+        "albumin": "3.2 g/dL",
+        "globulin": "3.6 g/dL",
+        "ast_alt_ratio": 1.14,
+        "interpretation": "Mixed hepatocellular and cholestatic injury pattern. Evaluate for acute hepatitis, biliary obstruction, alcoholic liver disease."
+      },
+      "metadata": {
+        "patient_age": 56,
+        "patient_gender": "M",
+        "report_date": "2026-07-08"
+      },
+      "entries": [
+        {
+          "question": "What liver function abnormalities are present?",
+          "expected_answer": "Elevated bilirubin (total 3.4, direct 2.1, indirect 1.3), elevated liver enzymes ALT 185, AST 210, ALP 180, GGT 165, and low albumin 3.2 g/dL. This indicates significant liver dysfunction with both hepatocellular injury and cholestatic features.",
+          "expected_citations": ["lft_abnormal_002:total_bilirubin", "lft_abnormal_002:alt", "lft_abnormal_002:ast", "lft_abnormal_002:alp", "lft_abnormal_002:albumin"],
+          "expected_medical_concepts": ["hyperbilirubinemia", "hepatocellular injury", "cholestasis", "jaundice"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What is the significance of an AST/ALT ratio of 1.14 with these findings?",
+          "expected_answer": "An AST/ALT ratio of 1.14 (mildly elevated, typically >1.5 suggests alcoholic liver disease while >2 is strongly suggestive). The mixed pattern with elevated ALP and GGT suggests both hepatocellular damage and cholestasis. Differential diagnosis includes alcoholic hepatitis, viral hepatitis, drug-induced liver injury, or biliary obstruction. Further workup should include viral hepatitis serologies, abdominal ultrasound, and history of alcohol use.",
+          "expected_citations": ["lft_abnormal_002:ast_alt_ratio", "lft_abnormal_002:alp", "lft_abnormal_002:ggt", "lft_abnormal_002:interpretation"],
+          "expected_medical_concepts": ["ast/alt ratio", "alcoholic liver disease", "hepatocellular vs cholestatic", "differential diagnosis"],
+          "difficulty": "hard",
+          "category": "diagnosis",
+          "expected_confidence": 0.85
+        }
+      ]
+    }
+  ]
+}

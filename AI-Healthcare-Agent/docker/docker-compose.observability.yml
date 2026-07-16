@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: healthcare-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: healthcare-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/dashboards:/etc/grafana/provisioning/dashboards
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    container_name: healthcare-otel-collector
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./otel-collector:/etc/otel
+    command:
+      - "--config=/etc/otel/otel-collector.yml"
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: healthcare-tempo
+    ports:
+      - "3200:3200"
+      - "9095:9095"
+    command:
+      - "-config.file=/etc/tempo/tempo.yml"
+    volumes:
+      - ./tempo:/etc/tempo
+      - tempo_data:/tmp/tempo
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: healthcare-loki
+    ports:
+      - "3100:3100"
+    command:
+      - "-config.file=/etc/loki/loki.yml"
+    volumes:
+      - ./loki:/etc/loki
+      - loki_data:/tmp/loki
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: healthcare-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    restart: unless-stopped
+    networks:
+      - healthcare-monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  tempo_data:
+  loki_data:
+
+networks:
+  healthcare-monitoring:
+    name: healthcare-monitoring

@@ -1,0 +1,120 @@
+{
+  "name": "discharge_samples",
+  "description": "Sample discharge summary datasets for clinical validation",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "metadata": {
+    "source": "synthetic_ehr",
+    "language": "en"
+  },
+  "documents": [
+    {
+      "document_id": "discharge_pneumonia_001",
+      "document_type": "discharge_summary",
+      "document_text": "DISCHARGE SUMMARY\nPatient: Robert King, MRN: 88472\nAdmission Date: 2026-06-10 | Discharge Date: 2026-06-15\nAdmitting Diagnosis: Community-acquired pneumonia, left lower lobe (J15.9)\nDischarge Diagnosis: Community-acquired pneumonia, left lower lobe, resolved\n\nHistory of Present Illness: 68-year-old male with history of hypertension and COPD presented with 5-day history of productive cough, fever (102.3F), chills, and dyspnea on exertion. Chest X-ray confirmed left lower lobe infiltrate.\n\nHospital Course: Admitted and started on IV Ceftriaxone 2g daily and Azithromycin 500mg IV daily per CAP guidelines. Blood cultures negative x2. Sputum culture grew Streptococcus pneumoniae sensitive to beta-lactams. Fever curve improved by hospital day 3. Transitioned to oral Amoxicillin-Clavulanate 875/125 mg BID on day 4. O2 saturation maintained >92% on room air by discharge.\n\nDischarge Medications:\n1. Amoxicillin-Clavulanate 875/125 mg, 1 tablet BID x 7 days\n2. Tiotropium 18 mcg inhalation capsule daily\n3. Fluticasone/Salmeterol 250/50 mcg 1 inhalation BID\n4. Lisinopril 10 mg daily\n\nDischarge Condition: Stable. Afebrile. O2 sat 96% RA. Lungs clear to auscultation bilaterally.\nFollow-up: With PCP in 2 weeks. Pulmonary clinic in 4 weeks.\n\nLab Values at Discharge: WBC 7.8, Hb 13.5, Plt 320, Na 138, K 4.0, Cr 0.9, Glucose 110.",
+      "structured_extraction": {
+        "admission_diagnosis": "Community-acquired pneumonia, left lower lobe (J15.9)",
+        "discharge_diagnosis": "Community-acquired pneumonia, left lower lobe, resolved",
+        "pathogen": "Streptococcus pneumoniae",
+        "hospital_course": "IV Ceftriaxone + Azithromycin, transitioned to oral Amoxicillin-Clavulanate",
+        "discharge_medications": [
+          {"name": "Amoxicillin-Clavulanate", "dosage": "875/125 mg", "frequency": "BID", "duration": "7 days"},
+          {"name": "Tiotropium", "dosage": "18 mcg", "frequency": "daily", "form": "inhalation capsule"},
+          {"name": "Fluticasone/Salmeterol", "dosage": "250/50 mcg", "frequency": "BID", "form": "inhalation"},
+          {"name": "Lisinopril", "dosage": "10 mg", "frequency": "daily"}
+        ],
+        "discharge_vitals": "Afebrile, O2 sat 96% RA, lungs clear"
+      },
+      "metadata": {
+        "patient_age": 68,
+        "patient_gender": "M",
+        "report_date": "2026-06-15",
+        "length_of_stay_days": 5
+      },
+      "entries": [
+        {
+          "question": "What was the causative organism and its antibiotic sensitivity?",
+          "expected_answer": "Sputum culture grew Streptococcus pneumoniae, which was sensitive to beta-lactams. Blood cultures were negative.",
+          "expected_citations": ["discharge_pneumonia_001:pathogen", "discharge_pneumonia_001:discharge_medications"],
+          "expected_medical_concepts": ["streptococcus pneumoniae", "community-acquired pneumonia", "antibiotic sensitivity"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "Was the empiric antibiotic regimen appropriate for this patient with COPD and CAP?",
+          "expected_answer": "Yes. For a patient with COPD and community-acquired pneumonia, the IDSA/ATS guidelines recommend empiric therapy with a beta-lactam (Ceftriaxone) PLUS a macrolide (Azithromycin) to cover typical and atypical pathogens. Streptococcus pneumoniae was confirmed and sensitive. The transition to oral Amoxicillin-Clavulanate for step-down was appropriate given clinical improvement and confirmed sensitivity.",
+          "expected_citations": ["discharge_pneumonia_001:hospital_course", "discharge_pneumonia_001:pathogen"],
+          "expected_medical_concepts": ["antibiotic stewardship", "cap guidelines", "idsa/ats", "step-down therapy", "empiric antibiotics"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.88
+        },
+        {
+          "question": "What discharge medications were continued for the patient's chronic conditions?",
+          "expected_answer": "For COPD: Tiotropium 18 mcg daily and Fluticasone/Salmeterol 250/50 mcg BID. For hypertension: Lisinopril 10 mg daily. These are in addition to the Amoxicillin-Clavulanate for pneumonia.",
+          "expected_citations": ["discharge_pneumonia_001:discharge_medications"],
+          "expected_medical_concepts": ["copd management", "hypertension", "tiotropium", "laba/ics", "ace inhibitor"],
+          "difficulty": "medium",
+          "category": "medication",
+          "expected_confidence": 0.9
+        }
+      ]
+    },
+    {
+      "document_id": "discharge_chf_002",
+      "document_type": "discharge_summary",
+      "document_text": "DISCHARGE SUMMARY\nPatient: Maria Gonzalez, MRN: 89103\nAdmission Date: 2026-07-01 | Discharge Date: 2026-07-06\nAdmitting Diagnosis: Acute on chronic systolic heart failure with reduced ejection fraction (I50.22)\nDischarge Diagnosis: Acute on chronic systolic heart failure, NYHA Class II\n\nHistory of Present Illness: 72-year-old female with history of ischemic cardiomyopathy (LVEF 35% on prior echo), hypertension, and type 2 diabetes presented with 4-day history of progressive dyspnea on exertion, orthopnea, PND, and bilateral lower extremity edema. Weight gain of 8 lbs over 1 week.\n\nHospital Course: Admitted with acute decompensated heart failure. IV Furosemide 40 mg BID initiated with strict I/O monitoring. Daily weight monitoring. Achieved net negative fluid balance of 5L over 5 days. Repeat basic metabolic panel showed Cr 1.1 (baseline 0.9), K+ 4.2. Echo showed LVEF 30% with moderate MR. Troponin negative x3. Transitioned to oral Furosemide 40 mg daily on day 4. Blood pressure controlled on medical therapy (125/75 on discharge).\n\nDischarge Medications:\n1. Furosemide 40 mg PO daily\n2. Carvedilol 6.25 mg PO BID (titrated from 3.125 mg BID)\n3. Lisinopril 5 mg PO daily (started after volume optimization)\n4. Metformin 500 mg PO BID\n5. Empagliflozin 10 mg PO daily\n\nDischarge Condition: Stable. Weight 2 lbs above dry weight. No edema. Clear lungs. O2 sat 96% RA. Goal-directed medical therapy for HFrEF initiated.\n\nFollow-up: Heart failure clinic in 1 week. PCP in 2 weeks. Repeat echo in 3 months.\n\nLabs at Discharge: Na 137, K 4.2, Cr 1.1, BUN 24, HbA1c 7.1%, BNP 850 (down from 2400 on admission).",
+      "structured_extraction": {
+        "admission_diagnosis": "Acute on chronic systolic heart failure with reduced ejection fraction (I50.22)",
+        "discharge_diagnosis": "Acute on chronic systolic heart failure, NYHA Class II",
+        "ejection_fraction": "30%",
+        "hospital_course": "IV diuresis with Furosemide, net negative 5L, initiated GDMT",
+        "discharge_medications": [
+          {"name": "Furosemide", "dosage": "40 mg", "frequency": "daily"},
+          {"name": "Carvedilol", "dosage": "6.25 mg", "frequency": "BID"},
+          {"name": "Lisinopril", "dosage": "5 mg", "frequency": "daily"},
+          {"name": "Metformin", "dosage": "500 mg", "frequency": "BID"},
+          {"name": "Empagliflozin", "dosage": "10 mg", "frequency": "daily"}
+        ],
+        "bnp_on_admission": "2400 pg/mL",
+        "bnp_at_discharge": "850 pg/mL"
+      },
+      "metadata": {
+        "patient_age": 72,
+        "patient_gender": "F",
+        "report_date": "2026-07-06",
+        "length_of_stay_days": 5
+      },
+      "entries": [
+        {
+          "question": "What was the net fluid balance achieved during hospitalization?",
+          "expected_answer": "Net negative fluid balance of 5 liters over 5 days achieved with IV Furosemide 40 mg BID and strict intake/output monitoring.",
+          "expected_citations": ["discharge_chf_002:hospital_course"],
+          "expected_medical_concepts": ["fluid balance", "diuresis", "furosemide", "heart failure management"],
+          "difficulty": "easy",
+          "category": "lab_result",
+          "expected_confidence": 0.95
+        },
+        {
+          "question": "What goal-directed medical therapy (GDMT) was initiated for HFrEF?",
+          "expected_answer": "HFrEF GDMT includes: (1) Beta-blocker - Carvedilol 6.25 mg BID (being titrated up), (2) ACE inhibitor - Lisinopril 5 mg daily (started post-volume optimization), (3) Loop diuretic - Furosemide 40 mg daily for symptom control, (4) SGLT2 inhibitor - Empagliflozin 10 mg daily for HF and diabetes. Guideline-directed therapy would also target an MRA (spironolactone or eplerenone) and potentially ARNI (sacubitril/valsartan) if tolerated.",
+          "expected_citations": ["discharge_chf_002:discharge_medications", "discharge_chf_002:ejection_fraction"],
+          "expected_medical_concepts": ["heart failure with reduced ejection fraction", "goal-directed medical therapy", "carvedilol", "ace inhibitor", "sglt2 inhibitor", "arnst"],
+          "difficulty": "hard",
+          "category": "medication",
+          "expected_confidence": 0.87
+        },
+        {
+          "question": "How did the patient's BNP change and what does it indicate?",
+          "expected_answer": "BNP decreased from 2400 pg/mL on admission to 850 pg/mL at discharge. A significant reduction indicates successful decongestion and improved hemodynamics. BNP >400 is associated with acute decompensated HF. The trend downward is a favorable prognostic indicator. Values remain elevated (reference <100 pg/mL) due to underlying chronic HF with reduced LVEF.",
+          "expected_citations": ["discharge_chf_002:bnp_on_admission", "discharge_chf_002:bnp_at_discharge"],
+          "expected_medical_concepts": ["b-type natriuretic peptide", "heart failure biomarkers", "decongestion", "prognosis"],
+          "difficulty": "medium",
+          "category": "lab_result",
+          "expected_confidence": 0.9
+        }
+      ]
+    }
+  ]
+}
