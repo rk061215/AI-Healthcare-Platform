@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
+    # Checkpoint Provider
+    CHECKPOINT_PROVIDER: str = "in_memory"
+
     # JWT
     JWT_SECRET_KEY: str = DEFAULT_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
@@ -127,6 +130,7 @@ class Settings(BaseSettings):
 
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_PROVIDER: str = "in_memory"
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_LOGIN_PER_MINUTE: int = 5
     RATE_LIMIT_MAX_REQUESTS: int = 100

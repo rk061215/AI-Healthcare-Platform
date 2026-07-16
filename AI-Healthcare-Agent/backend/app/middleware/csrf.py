@@ -17,7 +17,7 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
     ----------------------------------------------------
     This application uses Bearer tokens sent in the Authorization header for
     API authentication. Browsers do NOT automatically attach Authorization
-    headers to cross-origin requests — unlike cookies, which are attached
+    headers to cross-origin requests -- unlike cookies, which are attached
     automatically. This means the application is already inherently CSRF-safe
     when using Bearer token auth.
 
@@ -36,12 +36,18 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp):
         super().__init__(app)
-        self._allowed_origins = set()
+        self._allowed_origins: set[tuple[str, str, int]] = set()
         for origin in settings.cors_origins:
             parsed = urlparse(origin)
-            netloc = parsed.netloc or parsed.path
-            self._allowed_origins.add(netloc)
-            self._allowed_origins.add(origin)
+            scheme = parsed.scheme
+            host = parsed.hostname
+            port = parsed.port
+            if not scheme or not host:
+                logger.warning(f"Skipping malformed CORS origin: {origin}")
+                continue
+            if port is None:
+                port = 443 if scheme == "https" else 80
+            self._allowed_origins.add((scheme, host, port))
         logger.debug(f"CSRF middleware allowed origins: {self._allowed_origins}")
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -79,7 +85,15 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
     def _origin_is_allowed(self, url: str) -> bool:
         if not url:
             return False
-        for allowed in self._allowed_origins:
-            if allowed in url:
-                return True
-        return False
+        try:
+            parsed = urlparse(url)
+            scheme = parsed.scheme
+            host = parsed.hostname
+            port = parsed.port
+        except Exception:
+            return False
+        if not scheme or not host:
+            return False
+        if port is None:
+            port = 443 if scheme == "https" else 80
+        return (scheme, host, port) in self._allowed_origins

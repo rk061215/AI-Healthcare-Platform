@@ -18,7 +18,7 @@ class HealthResult:
     status: str = "healthy"
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     services: dict = field(default_factory=dict)
-    version: str = "0.8.0"
+    version: str = "1.0.0"
 
 
 @dataclass

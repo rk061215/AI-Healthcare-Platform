@@ -1,0 +1,93 @@
+# Render Blueprint Configuration
+# Deploy: render blueprint deploy
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ── Backend Web Service ──
+  - type: web
+    name: healthcare-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DATABASE_URL
+        fromDatabase:
+          name: healthcare-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        value: https://healthcare-frontend.onrender.com
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: gemini
+      - key: CHROMA_HOST
+        value: localhost
+      - key: CHROMA_PORT
+        value: "8000"
+      - key: REDIS_URL
+        value: ""
+      - key: SENTRY_DSN
+        value: ""
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: RATE_LIMIT_LOGIN_PER_MINUTE
+        value: "10"
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: ""
+    disks:
+      - name: uploads
+        mountPath: /app/uploads
+        sizeGB: 1
+      - name: documents
+        mountPath: /app/documents
+        sizeGB: 1
+
+  # ── Frontend Web Service ──
+  # Note: Next.js with output: "standalone" requires a Node server.
+  # Render "Web Service" (not "Static Site") is required because
+  # standalone output runs `node server.js` at runtime.
+  - type: web
+    name: healthcare-frontend
+    env: node
+    buildCommand: npm ci && npm run build
+    startCommand: node server.js
+    healthCheckPath: /
+    plan: free
+    region: oregon
+    dockerfilePath: frontend/Dockerfile
+    # Using Node env instead of Docker for free-tier simplicity.
+    # If using Docker, set env: docker, dockerfilePath: frontend/Dockerfile, dockerContext: frontend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://healthcare-backend.onrender.com/api/v1
+      - key: NEXT_PUBLIC_WS_URL
+        value: wss://healthcare-backend.onrender.com/ws
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://healthcare-frontend.onrender.com
+      - key: NEXT_PUBLIC_ENABLE_CHAT
+        value: "true"
+      - key: NEXT_PUBLIC_ENABLE_EMERGENCY
+        value: "true"
+      - key: NEXT_PUBLIC_ENABLE_REMINDERS
+        value: "true"
+
+databases:
+  - name: healthcare-db
+    plan: free
+    region: oregon
+    databaseName: healthcare_agent
+    user: healthcare_user
+    ipAllowList: []

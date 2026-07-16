@@ -13,6 +13,8 @@ from app.models.doctor import Doctor
 from app.models.patient import Patient
 from app.repositories.appointment_repository import AppointmentRepository, AuditLogRepository, AvailabilityRepository
 from app.schemas.pagination import PaginatedResponse
+from app.services.appointment.availability_service import AppointmentAvailabilityService
+from app.services.appointment.recurring_service import AppointmentRecurringService
 
 
 class AppointmentService:
@@ -21,6 +23,8 @@ class AppointmentService:
         self.appointment_repo = AppointmentRepository(db)
         self.audit_repo = AuditLogRepository(db)
         self.availability_repo = AvailabilityRepository(db)
+        self._availability_svc = AppointmentAvailabilityService(db)
+        self._recurring_svc = AppointmentRecurringService(db, self.appointment_repo)
 
     def _uuid(self, value: str) -> uuid.UUID:
         return uuid.UUID(value)
@@ -456,217 +460,18 @@ class AppointmentService:
         self, data: dict, user_id: str, role: str
     ) -> list[Appointment]:
         first = self.create_appointment(data, user_id, role)
-
-        recurring = RecurringAppointment(
-            appointment_id=first.id,
-            frequency=data["frequency"],
-            interval_count=data.get("interval_count", 1),
-            weekdays=",".join(str(d) for d in data["weekdays"]) if data.get("weekdays") else None,
-            end_date=data.get("end_date"),
-            max_occurrences=data.get("max_occurrences"),
-            occurrences_generated=0,
-        )
-        self.db.add(recurring)
-        self.db.flush()
-
-        generated = [first]
-        current = first.scheduled_at
-        frequency = data["frequency"]
-        interval = data.get("interval_count", 1)
-        max_occ = data.get("max_occurrences")
-        end_date = data.get("end_date")
-        weekdays = data.get("weekdays")
-
-        occurrences = 0
-        while True:
-            occurrences += 1
-            if max_occ and occurrences >= max_occ:
-                break
-            if end_date and current >= end_date:
-                break
-
-            if frequency == "daily":
-                current = current + timedelta(days=interval)
-            elif frequency == "weekly":
-                current = current + timedelta(weeks=interval)
-            elif frequency == "biweekly":
-                current = current + timedelta(weeks=2 * interval)
-            elif frequency == "monthly":
-                month = current.month + interval
-                year = current.year + (month - 1) // 12
-                month = ((month - 1) % 12) + 1
-                try:
-                    current = current.replace(year=year, month=month)
-                except ValueError:
-                    break
-
-            if weekdays and frequency == "weekly":
-                matching_days = []
-                for d in sorted(weekdays):
-                    days_ahead = d - current.weekday()
-                    if days_ahead <= 0:
-                        days_ahead += 7
-                    matching_days.append(current + timedelta(days=days_ahead))
-                matching_days.sort()
-                for dt in matching_days:
-                    if max_occ and occurrences >= max_occ:
-                        break
-                    if end_date and dt >= end_date:
-                        break
-                    if dt == matching_days[0]:
-                        current = dt
-                    else:
-                        conflict = self._check_conflict(
-                            first.doctor_id, dt, first.duration_minutes
-                        )
-                        if conflict:
-                            continue
-                        new_appt = Appointment(
-                            patient_id=first.patient_id,
-                            doctor_id=first.doctor_id,
-                            title=first.title,
-                            description=first.description,
-                            scheduled_at=dt,
-                            duration_minutes=first.duration_minutes,
-                            timezone=first.timezone,
-                        )
-                        self.db.add(new_appt)
-                        self.db.flush()
-                        generated.append(new_appt)
-                        occurrences += 1
-                continue
-
-            if max_occ and len(generated) >= max_occ:
-                break
-            if end_date and current >= end_date:
-                break
-
-            try:
-                conflict = self._check_conflict(first.doctor_id, current, first.duration_minutes)
-                if conflict:
-                    continue
-                new_appt = Appointment(
-                    patient_id=first.patient_id,
-                    doctor_id=first.doctor_id,
-                    title=first.title,
-                    description=first.description,
-                    scheduled_at=current,
-                    duration_minutes=first.duration_minutes,
-                    timezone=first.timezone,
-                )
-                self.db.add(new_appt)
-                self.db.flush()
-                generated.append(new_appt)
-            except Exception:
-                break
-
-        recurring.occurrences_generated = len(generated) - 1
-        self.db.commit()
-
-        for appt in generated:
-            self.db.refresh(appt)
-
-        return generated
+        return self._recurring_svc.create_recurring(first, data)
 
     def get_availability(self, doctor_id: str) -> list[dict]:
-        doctor_uuid = self._uuid(doctor_id)
-        slots = self.availability_repo.get_by_doctor(doctor_uuid)
-        return [
-            {
-                "id": str(s.id),
-                "doctor_id": str(s.doctor_id),
-                "day_of_week": s.day_of_week,
-                "start_time": s.start_time,
-                "end_time": s.end_time,
-                "is_available": s.is_available,
-                "slot_duration_minutes": s.slot_duration_minutes,
-            }
-            for s in slots
-        ]
+        return self._availability_svc.get_availability(doctor_id)
 
     def set_availability(self, doctor_id: str, slots: list[dict]) -> list[dict]:
-        doctor_uuid = self._uuid(doctor_id)
-        existing = self.availability_repo.get_by_doctor(doctor_uuid)
-        for slot in existing:
-            self.db.delete(slot)
-        self.db.flush()
-
-        created = []
-        for slot in slots:
-            av = DoctorAvailability(
-                doctor_id=doctor_uuid,
-                day_of_week=slot["day_of_week"],
-                start_time=slot["start_time"],
-                end_time=slot["end_time"],
-                is_available=slot.get("is_available", True),
-                slot_duration_minutes=slot.get("slot_duration_minutes", 30),
-            )
-            self.db.add(av)
-            self.db.flush()
-            created.append(av)
-
-        self.db.commit()
-        return self.get_availability(doctor_id)
+        return self._availability_svc.set_availability(doctor_id, slots)
 
     def get_available_slots(
         self, doctor_id: str, date_str: str
     ) -> list[dict]:
-        doctor_uuid = self._uuid(doctor_id)
-        try:
-            target_date = datetime.fromisoformat(date_str).date()
-        except (ValueError, TypeError):
-            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-
-        day_of_week = target_date.weekday()
-        slots = self.availability_repo.get_by_doctor_and_day(doctor_uuid, day_of_week)
-        if not slots:
-            return []
-
-        day_start = datetime(target_date.year, target_date.month, target_date.day, tzinfo=timezone.utc)
-        day_end = day_start + timedelta(days=1)
-
-        existing_appointments = self.appointment_repo.get_by_doctor_and_time_range(
-            doctor_uuid, day_start, day_end
-        )
-
-        booked_ranges = []
-        for appt in existing_appointments:
-            appt_end = appt.scheduled_at + timedelta(minutes=appt.duration_minutes)
-            booked_ranges.append((appt.scheduled_at, appt_end))
-
-        available = []
-        now = self._now()
-
-        for slot in slots:
-            hour, minute = map(int, slot.start_time.split(":"))
-            slot_start = day_start.replace(hour=hour, minute=minute)
-
-            end_hour, end_minute = map(int, slot.end_time.split(":"))
-            slot_end = day_start.replace(hour=end_hour, minute=end_minute)
-
-            current = slot_start
-            while current + timedelta(minutes=slot.slot_duration_minutes) <= slot_end:
-                if current < now:
-                    current += timedelta(minutes=slot.slot_duration_minutes)
-                    continue
-
-                slot_end_time = current + timedelta(minutes=slot.slot_duration_minutes)
-                is_booked = False
-                for b_start, b_end in booked_ranges:
-                    if current < b_end and slot_end_time > b_start:
-                        is_booked = True
-                        break
-
-                if not is_booked:
-                    available.append({
-                        "start": current.isoformat(),
-                        "end": slot_end_time.isoformat(),
-                        "doctor_id": doctor_id,
-                    })
-
-                current += timedelta(minutes=slot.slot_duration_minutes)
-
-        return available
+        return self._availability_svc.get_available_slots(doctor_id, date_str)
 
     def get_audit_logs(self, appointment_id: str, user_id: str, role: str) -> list[dict]:
         appointment = self._get_appointment(appointment_id)

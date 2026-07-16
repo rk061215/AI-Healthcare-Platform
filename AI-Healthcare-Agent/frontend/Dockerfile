@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────
 
 # ---- Dev Stage ----
-FROM node:20-alpine AS dev
+FROM node:20.18-alpine AS dev
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ CMD ["npm", "run", "dev"]
 
 
 # ---- Build Stage ----
-FROM node:20-alpine AS builder
+FROM node:20.18-alpine AS builder
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN npm run build
 
 
 # ---- Production Stage ----
-FROM node:20-alpine AS production
+FROM node:20.18-alpine AS production
 
 WORKDIR /app
 

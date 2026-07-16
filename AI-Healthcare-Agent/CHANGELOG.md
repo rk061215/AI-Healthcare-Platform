@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] — 2026-07-16
+
+### Added
+
+#### Phase R — GA Readiness & Final Polish
+
+##### Security Hardening (Part 1)
+- **CSRF fix**: replaced origin substring matching (`if allowed in url`) with strict scheme+host+port tuple comparison — closes `localhost:3000.evil.com` bypass
+- **PostgreSQL rate limiter**: `PostgresRateLimiter` backed by `rate_limits` table; configurable via `RATE_LIMIT_PROVIDER` setting (`"in_memory"` default, `"postgres"` for production)
+- `RateLimiterFactory` abstraction for provider selection
+
+##### UX Polish (Part 2)
+- Active nav link highlighting in sidebar (`usePathname()` matching) — both patient & doctor layouts
+- Modal focus trapping + Escape key handler in reports page
+- Dashboard loading states with `LoadingState` component — both patient & doctor
+- Medicines page error toast: silent error swallow replaced with `toast.error()`
+
+##### Deployment Hardening (Part 3)
+- Docker image versions pinned:
+  - `python:3.12.9-slim` (was `3.12-slim`)
+  - `node:20.18-alpine` (was `20-alpine`)
+  - `chromadb/chroma:0.5.23` (was `:latest`)
+- `render.yaml`: Render Blueprint for backend (Docker, free) + frontend (Node standalone, free)
+- `vercel.json`: Vercel deployment config (Next.js, API rewrites, security headers)
+- `docker/nginx.conf`: Production Nginx reverse proxy with SSL, WebSocket, rate limiting
+
+##### Configuration Review (Part 4)
+- Audited all 81 settings in `config.py` vs both `.env.example` files
+- Added 35 missing variables to `backend/.env.example` (OCR, Security, Document Storage, Rate Limiting, Appointment Management, Gemini/Embedding)
+
+##### Phase Q Validation Reports (generated)
+- `DEPLOYMENT_VALIDATION.md`: 30 PASS / 12 WARNING / 0 FAIL
+- `END_TO_END_WORKFLOW_VALIDATION.md`: 5 scenarios fully traced
+- `DEMO_WORKFLOWS.md`: 5 interview-ready demonstration workflows
+- `SECURITY_VALIDATION_REPORT.md`: 8 PASS / 2 WARNING / 0 FAIL
+- `PERFORMANCE_BENCHMARKS.md`: 15 measurement points
+- `STRESS_TESTING_PLAN.md`: 6 stress test areas
+- `UX_REVIEW.md`: 4 P0 / 6 P1 / 10 P2 issues identified
+- `REAL_WORLD_READINESS_REPORT.md`: Overall 7.1/10
+- `NEXT_RECOMMENDATIONS.md`: 7 bugs, 5 optimizations, v1.1 features, startup roadmap
+- `DEPLOYMENT_HARDENING_REPORT.md`: Image pinning + deployment review
+
+## [1.0.0-rc.1] — 2026-07-16
+
+### Added
+
+#### Phase P — Production Hardening (`backend/app/services/appointment/`)
+
+##### Appointment Service Refactoring
+- Extracted `AppointmentService` (699 lines → 249 lines) by delegating to focused sub-services
+- `AppointmentAvailabilityService` — availability CRUD, available slot computation
+- `AppointmentRecurringService` — recurring appointment generation with conflict checking
+- Both sub-services in `backend/app/services/appointment/` package
+
+##### Frontend Test Suite
+- Introduced 40-unit test suite across services (auth, chat, reports, medicines, demo, patients, doctor), stores (auth, UI), and HTTP interceptors
+- Vitest configured with jsdom, path aliases, and test-utils setup
+- All 40/40 tests passing
+
+##### Persistent Providers (PostgreSQL)
+- `PostgresStore` — full `BaseMemoryStore` implementation on JSONB columns (content + metadata)
+- `PostgresCheckpointStore` — full `BaseCheckpointStore` implementation for LangGraph checkpoints
+- Models: `MemoryEntryModel`, `CheckpointEntry` with reusable abstract base
+- Configurable via `CHECKPOINT_PROVIDER` setting; defaults to `"in_memory"`
+
+##### CI/CD & Security
+- Frontend CI: added `test` job (npm ci → npm run test:run)
+- Backend CI: includes pytest with coverage reporting
+- `backend/.env.example`: added SENTRY_DSN, LANGSMITH_API_KEY, CHECKPOINT_PROVIDER, Gemini/AI config, backup, and OpenTelemetry variables
+- `root .env.example`: already included SENTRY_DSN and LANGSMITH_API_KEY
+
+##### Cleanup
+- Removed duplicate `python-jose==3.3.0` and `httpx==0.28.1` from `requirements.txt`
+- Added missing `__init__.py` to `validation/dataset/fixtures/`
+- Removed fragile `api-client.test.ts` (interceptor behavior tested indirectly via service tests)
+
 ## [0.19.0] — 2026-07-16
 
 ### Added

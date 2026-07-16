@@ -19,6 +19,7 @@ from app.langgraph.graph_executor import GraphExecutor
 from app.langgraph.graph_factory import GraphFactory
 from app.langgraph.graph_metrics import MetricsCollector, MetricsSnapshot
 from app.langgraph.graph_registry import GraphRegistry, get_global_registry
+from app.langgraph.postgres_checkpoint import PostgresCheckpointStore
 from app.langgraph.graph_runtime import BaseGraph
 from app.langgraph.graph_state import GraphPhase, GraphState, GraphStatus
 
@@ -42,6 +43,7 @@ __all__ = [
     "GraphStatus",
     "GraphTimeoutError",
     "InMemoryCheckpointStore",
+    "PostgresCheckpointStore",
     "InvalidGraphDefinitionError",
     "LangGraphConfig",
     "MetricsCollector",

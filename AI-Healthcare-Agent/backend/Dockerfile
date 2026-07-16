@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────
 
 # ---- Build Stage ----
-FROM python:3.12-slim AS builder
+FROM python:3.12.9-slim AS builder
 
 WORKDIR /build
 
@@ -20,7 +20,7 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
 
 # ---- Runtime Stage ----
-FROM python:3.12-slim AS runtime
+FROM python:3.12.9-slim AS runtime
 
 WORKDIR /app
 

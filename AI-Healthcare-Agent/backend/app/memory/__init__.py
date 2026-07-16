@@ -59,6 +59,7 @@ from app.memory.processors.memory_pruner import MemoryPruner, PruningReport
 from app.memory.processors.memory_retriever import MemoryRetriever
 from app.memory.processors.memory_summarizer import MemorySummarizer, SummarizationResult
 from app.memory.stores.in_memory_store import InMemoryStore
+from app.memory.stores.postgres_store import PostgresStore
 from app.memory.types.conversation_memory import ConversationMemory
 from app.memory.types.document_context import DocumentContext
 from app.memory.types.patient_context import PatientContext
@@ -67,6 +68,7 @@ from app.memory.types.tool_memory import ToolMemory
 
 
 get_global_registry().register("in_memory", InMemoryStore)
+get_global_registry().register("postgres", PostgresStore)
 
 
 __all__ = [
@@ -87,6 +89,7 @@ __all__ = [
     "ToolMemoryData",
     "MEMORY_SCHEMA_VERSION",
     "InMemoryStore",
+    "PostgresStore",
     "ConversationMemory",
     "DocumentContext",
     "PatientContext",

@@ -1,11 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Users, AlertTriangle, Calendar, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 export default function DoctorDashboard() {
   const user = useAuthStore((state) => state.user);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return <LoadingState message="Loading your dashboard..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Error</h1>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Activity,
@@ -40,6 +40,7 @@ export default function PatientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { sidebarOpen, sidebarCollapsed, toggleSidebar, setSidebarOpen, setSidebarCollapsed } = useUIStore();
 
@@ -99,6 +100,7 @@ export default function PatientLayout({
               onClick={() => setSidebarOpen(false)}
               className={cn(
                 "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent",
+                pathname === item.href ? "bg-sidebar-accent text-sidebar-foreground" : "text-sidebar-foreground/60",
                 sidebarCollapsed && "justify-center px-2",
               )}
             >

@@ -63,6 +63,58 @@ export default function ReportsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteModalRef = useRef<HTMLDivElement>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!deletingId && !detailOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (deletingId) setDeletingId(null);
+        if (detailOpen) setDetailOpen(false);
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const activeModal = deletingId ? deleteModalRef.current : detailModalRef.current;
+        if (!activeModal) return;
+        const focusable = activeModal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    const timer = setTimeout(() => {
+      const activeModal = deletingId ? deleteModalRef.current : detailModalRef.current;
+      if (activeModal) {
+        const firstFocusable = activeModal.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable?.focus();
+      }
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [deletingId, detailOpen]);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -404,7 +456,7 @@ export default function ReportsPage() {
       )}
 
       {deletingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div ref={deleteModalRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <Card className="mx-4 w-full max-w-sm">
             <CardHeader>
               <CardTitle>Delete Report</CardTitle>
@@ -425,7 +477,7 @@ export default function ReportsPage() {
       )}
 
       {detailOpen && selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 pt-12">
+        <div ref={detailModalRef} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 pt-12">
           <Card className="mx-4 mb-12 w-full max-w-2xl">
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <div>

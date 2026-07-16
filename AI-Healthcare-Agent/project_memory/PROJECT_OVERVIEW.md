@@ -1,6 +1,6 @@
 # AI Healthcare Follow-up Assistant — Project Overview
 
-**Version:** 0.19.0
+**Version:** 1.0.0
 **Last Updated:** 2026-07-16
 **Status:** MVP Complete — Production-Ready
 

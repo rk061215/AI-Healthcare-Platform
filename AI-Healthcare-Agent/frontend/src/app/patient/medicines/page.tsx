@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingState } from "@/components/shared/LoadingState";
+import { toast } from "sonner";
 import { medicineService } from "@/services/medicines";
 import { cn } from "@/lib/utils";
 import type { Medicine } from "@/types";
@@ -51,7 +52,10 @@ export default function MedicinesPage() {
         if (!controller.signal.aborted) setMedicines(data);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setMedicines([]);
+        if (!controller.signal.aborted) {
+          setMedicines([]);
+          toast.error("Failed to load medicines");
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
