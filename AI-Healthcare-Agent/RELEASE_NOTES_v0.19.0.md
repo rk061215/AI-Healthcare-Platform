@@ -152,14 +152,31 @@ This release adds 9 real medical document datasets, 3 fully polished frontend pa
 
 ## Known Issues
 
-- None currently reported.
+- In-memory memory store — Production deployments should configure Redis or Postgres adapters
+- Future AI/OCR/vector providers are scaffolded but require wiring
+- Mobile responsiveness is desktop-first (mobile optimization planned)
+- Single-tenant MVP — Hospital-level multi-tenancy not yet implemented
+- Formal HIPAA compliance audit not yet conducted
+
+---
+
+## Repository Polish (v0.19.0)
+
+Alongside the Phase N feature work, this release includes a comprehensive repository polish pass:
+
+- **Professional README** — Complete rewrite with architecture diagrams, badges, tech stack tables, statistics, and quick-start guide
+- **GitHub community files** — Added CODE_OF_CONDUCT.md, SUPPORT.md, ROADMAP.md, issue templates (bug/feature/docs), and PR template
+- **Asset placeholders** — Created `assets/` directory with screenshot guide for all key features
+- **Cleanup** — Removed generated audit and integration reports; consolidated root directory
+- **Version consistency** — All documentation updated to reference v0.19.0
+- **Portfolio readiness** — Repository is now presentation-ready for resume, GitHub portfolio, and internship applications
 
 ---
 
 ## Contributors
 
-This release was developed as part of the AI Healthcare Follow-up Assistant project. For questions or feedback, please open an issue on the project repository.
+This release was developed as part of the AI Healthcare Platform project. For questions or feedback, please open an issue on the project repository.
 
 ---
 
-*Full documentation: [CHANGELOG.md](CHANGELOG.md), [CURRENT_STATUS.md](project_memory/CURRENT_STATUS.md), [SYSTEM_READINESS.md](backend/SYSTEM_READINESS.md)*
+*Full documentation: [README.md](README.md), [CHANGELOG.md](CHANGELOG.md), [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md)*
