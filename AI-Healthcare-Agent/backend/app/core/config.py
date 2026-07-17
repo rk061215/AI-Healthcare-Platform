@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     WORKERS: int = 4
 
     # Database
-    DATABASE_URL: str = "postgresql://healthcare_user:healthcare_pass@localhost:5432/healthcare_agent"
+    DATABASE_URL: str = "postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 

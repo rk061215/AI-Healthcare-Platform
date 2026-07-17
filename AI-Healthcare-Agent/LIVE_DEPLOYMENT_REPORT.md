@@ -62,9 +62,9 @@ Route (app)                          Size  First Load JS
 ## 2. Database Configuration
 
 ### Connection
-- **Provider:** PostgreSQL 16 (Render managed database or Docker)
-- **URI:** `postgresql://healthcare_user:healthcare_pass@postgres:5432/healthcare_agent` (Docker)
-- **Render DB:** Managed via `render.yaml` blueprint
+- **Provider:** Neon PostgreSQL 16 (serverless, cloud-hosted)
+- **URI:** `postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require`
+- **SSL:** `sslmode=require` enabled for secure connection
 - **Pool:** 10 connections, max overflow 20
 
 ### Migrations (5 applied)
@@ -120,9 +120,11 @@ render blueprint deploy --config render.yaml
 # 1. Go to https://dashboard.render.com
 # 2. Connect GitHub repository rk061215/AI-Healthcare-Platform
 # 3. Render detects render.yaml automatically
-# 4. Set JWT_SECRET_KEY and GEMINI_API_KEY
+# 4. Set secrets: JWT_SECRET_KEY, GEMINI_API_KEY, DATABASE_URL
 # 5. Click "Deploy Blueprint"
 ```
+
+**Note:** Uses external Neon PostgreSQL instead of Render-managed DB. The `DATABASE_URL` must be manually set as a secret in the Render dashboard (no automatic DB provisioning).
 
 ---
 
@@ -270,6 +272,8 @@ services:
     env: docker
     plan: free
     healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL (sync: false — set in dashboard)
     disks:
       - name: uploads (1GB)
       - name: documents (1GB)
@@ -281,8 +285,8 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: node server.js
 
-databases:
-  - name: healthcare-db (free, PostgreSQL 16)
+# Database: External Neon PostgreSQL (not Render-managed)
+# URL set via DATABASE_URL secret
 ```
 
 ### vercel.json
@@ -340,8 +344,9 @@ All **4 critical blockers** from the Production Deployment Report have been reso
 
 ### Deployment Instructions
 1. Go to [Render Dashboard](https://dashboard.render.com) → New Blueprint → Connect `rk061215/AI-Healthcare-Platform`
-2. Set secrets: `JWT_SECRET_KEY`, `GEMINI_API_KEY`
-3. Deploy blueprint (creates PostgreSQL DB + backend service)
+2. Set secrets: `JWT_SECRET_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`
+   - DATABASE_URL value: `postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require`
+3. Deploy blueprint (backend service only — DB is external Neon PostgreSQL)
 4. Go to [Vercel Dashboard](https://vercel.com) → Import `rk061215/AI-Healthcare-Platform`
 5. Set root directory to `AI-Healthcare-Agent/frontend`
 6. Add environment variables from `.env.local.example`
