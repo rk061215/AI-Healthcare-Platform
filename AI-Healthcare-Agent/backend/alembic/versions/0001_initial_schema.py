@@ -106,7 +106,7 @@ def upgrade() -> None:
     op.create_table(
         "reports",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
         sa.Column("doctor_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("doctors.id", ondelete="SET NULL"), nullable=True),
         sa.Column("title", sa.String(255), nullable=True),
         sa.Column("file_path", sa.String(500), nullable=False),
@@ -192,7 +192,7 @@ def upgrade() -> None:
         "adherence_logs",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("medicine_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("medicines.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
         sa.Column("scheduled_time", sa.DateTime(timezone=True), nullable=False),
         sa.Column("taken_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default=sa.text("'pending'")),
