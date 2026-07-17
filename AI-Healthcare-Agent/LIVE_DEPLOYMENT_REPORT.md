@@ -149,7 +149,7 @@ render blueprint deploy --config render.yaml
 | Provider | `gemini` (via `AIProviderFactory`) |
 | Model | `gemini-2.0-flash` |
 | Embedding model | `text-embedding-004` |
-| API Key | ⚠️ Must be set as `GEMINI_API_KEY` in Render secrets |
+| API Key | ✅ Set and verified (key authenticates; quota exhausted on free tier) |
 | Health check | `/ready` endpoint verifies provider health |
 
 ---
@@ -344,8 +344,10 @@ All **4 critical blockers** from the Production Deployment Report have been reso
 
 ### Deployment Instructions
 1. Go to [Render Dashboard](https://dashboard.render.com) → New Blueprint → Connect `rk061215/AI-Healthcare-Platform`
-2. Set secrets: `JWT_SECRET_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`
-   - DATABASE_URL value: `postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require`
+2. Set secrets in Render dashboard:
+   - `DATABASE_URL` — Neon PostgreSQL connection string
+   - `JWT_SECRET_KEY` — generate a strong random secret
+   - `GEMINI_API_KEY` — Google Gemini API key
 3. Deploy blueprint (backend service only — DB is external Neon PostgreSQL)
 4. Go to [Vercel Dashboard](https://vercel.com) → Import `rk061215/AI-Healthcare-Platform`
 5. Set root directory to `AI-Healthcare-Agent/frontend`
