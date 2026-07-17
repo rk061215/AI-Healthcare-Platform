@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.metrics import metrics
 from app.database.session import get_db
 
-APP_VERSION = "0.8.0"
+APP_VERSION = "1.0.0"
 
 router = APIRouter(tags=["Monitoring"])
 

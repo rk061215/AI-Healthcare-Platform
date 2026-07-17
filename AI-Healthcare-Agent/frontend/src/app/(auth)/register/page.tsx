@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -112,7 +112,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = currentForm;
+  }: any = currentForm;
 
   const selectRole = (selected: "patient" | "doctor") => {
     setRole(selected);

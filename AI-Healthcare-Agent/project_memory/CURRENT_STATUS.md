@@ -5,27 +5,28 @@
 
 ---
 
-**Last Updated:** 2026-07-16 09:21 UTC
+**Last Updated:** 2026-07-16 10:05 UTC
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (GA Release — Phase R complete)
+**Overall Progress:** 100% (Vector Recovery — Phase U.2 complete)
 
 ---
 
 ## Current Phase
 
-**Phase R — GA Readiness & Final Polish** ✅ COMPLETED
+**Phase U.2 — Vector Index Recovery Manager** ✅ COMPLETED
 
 ## Current Sprint
 
-**Phase R — v1.0.0 Release** ✅
-- Security: CSRF origin substring matching → strict tuple comparison ✅
-- Security: PostgreSQL-backed rate limiter with provider selection ✅
-- UX: Active nav highlighting, modal focus trapping, loading states, error toast ✅
-- Deployment: Docker images pinned, render.yaml + vercel.json + nginx.conf created ✅
-- Configuration: All 81 config.py settings audited, 35 added to .env.example ✅
-- Regression: Frontend 40/40 ✅, Backend imports ✅
-- All Phase Q blockers resolved ✅
-- GA_READINESS_REPORT.md generated ✅
+**Phase U.2 — Vector Index Recovery Manager** ✅
+- ADR-028 approved: "Index as Derived State" architecture ✅
+- VectorIndexState model + migration 0005 created ✅
+- RecoveryManager: full incremental rebuild with state tracking ✅
+- Startup hook: auto-recovery in main.py lifespan ✅
+- Health check: /ready extended with vector_recovery status ✅
+- CLI: vector_index_cli.py with 5 commands ✅
+- Tests: 18 test cases covering all recovery scenarios ✅
+- Graceful degradation: app serves during rebuild, /health reports degraded ✅
+- Config-driven batch rebuild with API rate limit awareness ✅
 
 ---
 

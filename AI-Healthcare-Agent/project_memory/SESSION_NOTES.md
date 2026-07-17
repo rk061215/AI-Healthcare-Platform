@@ -4,20 +4,84 @@
 
 ---
 
-## Session: 2026-07-16 — GA Readiness & Final Polish — Phase R (v1.0.0)
+## Session: 2026-07-16 — Vector Index Recovery Manager — Phase U.2 (v1.0.0)
 
 ### Goal
-Resolve every Phase Q blocker and make the platform production-ready for v1.0.0 GA release. No new AI features, no architecture redesign.
+Implement the "Index as Derived State" architecture approved in ADR-028. The application must never depend on ChromaDB persistence. The vector index must automatically rebuild itself from PostgreSQL whenever needed.
 
 ### What Was Completed
 
-#### Part 1 — Security
-- **CSRF fix**: Replaced origin substring matching (`if allowed in url`) with strict `(scheme, host, port)` tuple comparison. Closes `localhost:3000.evil.com` bypass. Verified with Python assertions.
-- **PostgreSQL rate limiter**: `PostgresRateLimiter` backed by `rate_limits` table with auto-purge. `RateLimiterFactory` selects provider via `RATE_LIMIT_PROVIDER` setting. Default: `"in_memory"`, production: `"postgres"`.
+#### Part 1 — VectorIndexState Model
+- Created `app/models/vector_index_state.py`:
+  - `report_id` (UUID, unique, FK-compatible)
+  - `patient_id` (UUID, indexed)
+  - `embedding_model_version`, `chunk_version`, `schema_version`
+  - `chunk_count`, `index_status`, `index_checksum`, `error_message`
+  - `last_indexed_at`, `last_verified_at`
+  - TimestampMixin (created_at, updated_at)
+- Added `IndexStatus` enum to `app/database/enums.py`:
+  - `PENDING`, `INDEXED`, `STALE`, `FAILED`, `REBUILDING`
+- Created Alembic migration `0005_add_vector_index_state.py`:
+  - Table with all columns, indexes, trigger for updated_at
 
-#### Part 2 — UX Polish (4 P0 issues fixed)
-- Active nav link highlighting via `usePathname()` in both patient and doctor layouts
-- Modal focus trapping + Escape key handler in reports page
+#### Part 2 — Vector Recovery Package
+- Created `app/vector_recovery/` with:
+  - `__init__.py` — package marker
+  - `config.py` — `RecoveryConfig` (batch_size, delays, enabled flags) + `get_embedding_model_key()`
+  - `exceptions.py` — `RecoveryError`, `CollectionMissingError`, `CollectionCorruptedError`, `EmbeddingVersionMismatchError`, `SchemaVersionMismatchError`, `RebuildInterruptedError`, `RebuildFailedError`
+  - `health.py` — `VectorHealth` dataclass (status, collection_exists, indexed_reports, pending, failed, etc.) + global rebuild progress tracker
+  - `base_recovery_manager.py` — ABC with 8 abstract methods
+  - `recovery_manager.py` — Full `RecoveryManager` implementation
+
+#### Part 3 — Incremental Rebuild Logic
+- `_determine_work()` detects 3 categories:
+  1. Unindexed reports (in PostgreSQL but not in vector_index_state)
+  2. Stale/failed entries (marked pending/stale/failed)
+  3. Version mismatches (embedding model changed)
+- Deduplicates and returns unique list
+- Processes in batches (configurable: default 5)
+- Configurable delay between batches (default 0.5s) to respect embedding API rate limits
+
+#### Part 4 — Startup Hook
+- `main.py` lifespan now runs `RecoveryManager.run_startup_recovery()` after LangGraph bootstrap
+- Stores `app.state.vector_health` for health endpoint access
+- Shutdown hook closes vector store gracefully
+- Logs index status and recovery progress
+
+#### Part 5 — Health Check Integration
+- `/health` endpoint now includes `vector_store` status field
+- `/ready` endpoint includes `vector_recovery` check:
+  - `pass (N indexed)` when healthy
+  - `degraded (N pending, M failed)` when rebuilding
+  - `fail` when collection missing or error
+
+#### Part 6 — CLI Commands
+- Created `scripts/vector_index_cli.py`:
+  - `rebuild-all` — rebuild all pending/stale/mismatched reports
+  - `rebuild-report <uuid>` — rebuild single report
+  - `verify-index` — show full index verification report
+  - `cleanup-orphans` — remove state entries for deleted reports
+  - `show-status` — JSON dump of health + config
+
+#### Part 7 — Performance
+- Batch processing with configurable size (5 reports/batch)
+- Configurable delay between batches for API rate limiting
+- Reuses existing DocumentPipeline, EmbeddingService, VectorService
+- No duplicate embeddings: checks vector_index_state before indexing
+- Progress tracking via global state (checkable from health endpoint)
+
+#### Part 8 — Tests
+- Created `tests/test_vector_recovery.py`:
+  - 18 test cases across 6 test classes
+  - Covers: VectorHealth, RecoveryConfig, RecoveryManager (check_health, rebuild_all, rebuild_report, verify_index, cleanup_orphans), exceptions, enum values
+  - All tests use mock services (no real ChromaDB/PostgreSQL needed)
+
+### Architecture Decision
+- ADR-028 approved: "Index as Derived State"
+- ChromaDB is EPHEMERAL — PostgreSQL is SOURCE OF TRUTH
+- Vector index can be completely destroyed and rebuilt from PostgreSQL
+- All provider abstractions preserved (BaseVectorStore, Registry, Factory)
+- Compatible with future migration to pgvector/Qdrant/Pinecone/Weaviate
 - Dashboard loading states with `LoadingState` component on both dashboards
 - Medicines page error toast (silent error swallow → `toast.error()`)
 

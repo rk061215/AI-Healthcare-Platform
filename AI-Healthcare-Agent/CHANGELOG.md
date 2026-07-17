@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] — 2026-07-16
 
+### Vector Index Recovery (Phase U.2)
+
+- **ADR-028 approved**: "Index as Derived State" — ChromaDB is ephemeral, PostgreSQL is source of truth
+- **VectorIndexState model**: new `vector_index_state` table tracks per-report indexing status, embedding version, checksums
+- **RecoveryManager**: automatic incremental rebuild from PostgreSQL on any failure (missing collection, version mismatch, corrupt index)
+- **Startup hook**: `main.py` lifespan runs `run_startup_recovery()` — detects stale/missing index and triggers rebuild before accepting traffic
+- **Health check integration**: `/ready` includes `vector_recovery` check; `/health` reports `vector_store` status
+- **CLI commands**: `vector_index_cli.py` — `rebuild-all`, `rebuild-report`, `verify-index`, `cleanup-orphans`, `show-status`
+- **Graceful degradation**: app serves during rebuild; health endpoints report `degraded` until index is fully rebuilt
+- **Batch processing**: configurable batch size (5 reports) with delay between batches to respect embedding API rate limits
+
+### Deployment Hardening (Phase U.1)
+
+- **ChromaDB**: added persistent service to `docker-compose.production.yml` (pinned `chromadb/chroma:0.5.23`, healthcheck, persistent volume, depend-on for backend)
+- **Automatic migrations**: `startup.sh` runs `alembic upgrade head` before app start — idempotent, fail-safe, blocks deployment if migration fails
+- **Tesseract OCR**: installed `tesseract-ocr`, `tesseract-ocr-eng`, `poppler-utils` in runtime Docker stage; startup diagnostic logs tesseract version and available languages
+- **Secrets**: documented all 14 required/optional secrets in `SECRETS_SETUP_GUIDE.md` with generation commands and platform-specific configuration
+- **Render config**: added ChromaDB persistent disk (`/chroma/chroma`, 1GB) and `CHROMA_PERSIST_DIR` env var to `render.yaml`
+- **Dockerfile**: changed CMD from direct uvicorn to `./startup.sh` wrapper script
+- **Main.py**: added OCR subsystem check to startup lifespan logging
+
 ### Added
 
 #### Phase R — GA Readiness & Final Polish

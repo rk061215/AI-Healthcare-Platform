@@ -15,6 +15,7 @@ from app.core.logging_config import setup_logging as setup_stdlib_logging
 from app.core.metrics import metrics
 from app.core.telemetry import setup_opentelemetry
 from app.langgraph.bootstrap import GraphBootstrap, set_bootstrap_result
+from app.vector_recovery.recovery_manager import RecoveryManager
 from app.middleware.cors import setup_cors
 from app.middleware.csrf import CSRFTokenMiddleware
 from app.middleware.error_handler import setup_error_handlers
@@ -30,12 +31,24 @@ from app.middleware.tracing import TracingMiddleware
 async def lifespan(app: FastAPI):
     setup_loguru_logging()
     setup_stdlib_logging()
-    logger.info(f"Starting {settings.PROJECT_NAME} v0.8.0")
+    logger.info(f"Starting {settings.PROJECT_NAME} v1.0.0")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
 
     setup_sentry(app)
     setup_langsmith()
+
+    logger.info("Checking OCR subsystem...")
+    import shutil
+    if shutil.which("tesseract"):
+        import subprocess
+        try:
+            ver = subprocess.run(["tesseract", "--version"], capture_output=True, text=True, timeout=5)
+            logger.info(f"OCR: tesseract available — {ver.stdout.split(chr(10))[0] if ver.stdout else 'unknown'}")
+        except Exception:
+            logger.warning("OCR: tesseract binary found but version check failed")
+    else:
+        logger.warning("OCR: tesseract not found — document processing may fail")
 
     logger.info("Bootstrapping LangGraph runtime...")
     bootstrap_result = GraphBootstrap.run_full_bootstrap()
@@ -47,7 +60,26 @@ async def lifespan(app: FastAPI):
             f"LangGraph runtime started with {len(bootstrap_result.validation_errors)} issues"
         )
 
+    logger.info("Running vector index recovery...")
+    try:
+        recovery_mgr = RecoveryManager()
+        vector_health = recovery_mgr.run_startup_recovery()
+        logger.info(f"Vector index status: {vector_health.status} "
+                    f"({vector_health.indexed_reports}/{vector_health.total_reports} reports indexed)")
+        app.state.vector_health = vector_health
+    except Exception as exc:
+        logger.warning(f"Vector index recovery failed: {exc}")
+        app.state.vector_health = None
+
     yield
+
+    logger.info("Closing vector store...")
+    try:
+        from app.vector_store.vector_service import VectorService
+        vs = VectorService()
+        vs.close()
+    except Exception:
+        pass
 
     logger.info("Shutting down application")
 
@@ -55,7 +87,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="AI-powered healthcare follow-up assistant for post-discharge patient monitoring",
-    version="0.8.0",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -88,7 +120,14 @@ setup_opentelemetry(app)
 
 @app.get("/health")
 def root_health():
-    return {"status": "healthy", "version": "0.8.0"}
+    vector_status = "unknown"
+    try:
+        vh = getattr(app.state, "vector_health", None)
+        if vh:
+            vector_status = vh.status
+    except Exception:
+        pass
+    return {"status": "healthy", "version": "1.0.0", "vector_store": vector_status}
 
 
 @app.get("/")
@@ -97,7 +136,7 @@ def root():
         "message": "AI Healthcare Follow-up Assistant API",
         "docs": "/docs",
         "health": "/health",
-        "version": "0.8.0",
+        "version": "1.0.0",
     }
 
 

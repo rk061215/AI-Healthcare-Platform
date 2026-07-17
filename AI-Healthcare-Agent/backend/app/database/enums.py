@@ -121,3 +121,11 @@ class DocumentStatus(str, enum.Enum):
     PROCESSING = "processing"
     READY = "ready"
     FAILED = "failed"
+
+
+class IndexStatus(str, enum.Enum):
+    PENDING = "pending"
+    INDEXED = "indexed"
+    STALE = "stale"
+    FAILED = "failed"
+    REBUILDING = "rebuilding"

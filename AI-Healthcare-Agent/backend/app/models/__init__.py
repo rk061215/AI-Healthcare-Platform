@@ -11,6 +11,7 @@ from app.models.adherence_log import AdherenceLog
 from app.models.emergency_alert import EmergencyAlert
 from app.models.document import Document
 from app.models.memory_entry import MemoryEntryModel
+from app.models.vector_index_state import VectorIndexState
 
 __all__ = [
     "Patient",
@@ -29,4 +30,5 @@ __all__ = [
     "Document",
     "CheckpointEntry",
     "MemoryEntryModel",
+    "VectorIndexState",
 ]

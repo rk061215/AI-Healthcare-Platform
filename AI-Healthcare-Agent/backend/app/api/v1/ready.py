@@ -8,6 +8,7 @@ from app.database.session import get_db
 from app.langgraph.bootstrap import get_bootstrap_result
 from app.langgraph.graph_registry import get_global_registry
 from app.langgraph.graphs.medical_qa_graph import MedicalQAGraph
+from app.vector_recovery.recovery_manager import RecoveryManager
 
 router = APIRouter()
 
@@ -113,6 +114,22 @@ def readiness_probe(db: Session = Depends(get_db)):
     except Exception:
         checks["prompt_manager"] = "fail"
         unready.append("prompt_manager")
+
+    try:
+        mgr = RecoveryManager()
+        vh = mgr.check_health()
+        if vh.status == "healthy":
+            checks["vector_recovery"] = f"pass ({vh.indexed_reports} indexed)"
+        elif vh.status == "degraded":
+            checks["vector_recovery"] = f"degraded ({vh.pending_rebuild_count} pending, {vh.failed_rebuild_count} failed)"
+            if vh.pending_rebuild_count > 0 or not vh.collection_exists:
+                unready.append("vector_recovery")
+        else:
+            checks["vector_recovery"] = "fail"
+            unready.append("vector_recovery")
+    except Exception as exc:
+        checks["vector_recovery"] = "fail"
+        unready.append("vector_recovery")
 
     bootstrap = get_bootstrap_result()
     if bootstrap:

@@ -35,6 +35,9 @@ services:
         value: localhost
       - key: CHROMA_PORT
         value: "8000"
+      # ChromaDB persistence directory on Render disk
+      - key: CHROMA_PERSIST_DIR
+        value: /chroma/chroma
       - key: REDIS_URL
         value: ""
       - key: SENTRY_DSN
@@ -51,6 +54,14 @@ services:
         sizeGB: 1
       - name: documents
         mountPath: /app/documents
+        sizeGB: 1
+      # ChromaDB persistent storage for vector data
+      # NOTE: ChromaDB cannot run as a separate Render service on the free plan
+      # (15-min sleep would terminate it, and persistent disk is shared).
+      # Instead, ChromaDB runs alongside the backend using the persistent disk.
+      # See: docs/chromadb_render.md for full explanation and alternatives.
+      - name: chroma
+        mountPath: /chroma/chroma
         sizeGB: 1
 
   # ── Frontend Web Service ──
