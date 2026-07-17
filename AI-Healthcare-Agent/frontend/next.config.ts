@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "recharts"],
   },
   images: {
-    domains: ["localhost"],
+    remotePatterns: [
+      { protocol: "https", hostname: "healthcare-backend.onrender.com" },
+      { protocol: "http", hostname: "localhost" },
+    ],
   },
   async rewrites() {
     return [
