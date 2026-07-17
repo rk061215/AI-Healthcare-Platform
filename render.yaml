@@ -1,14 +1,15 @@
 # Render Blueprint Configuration
-# Deploy: render blueprint deploy
+# Location: Repository root (/) — required by Render Blueprint spec
+# All paths are relative to repository root
 # Docs: https://render.com/docs/blueprint-spec
 
 services:
-  # ── Backend Web Service ──
+  # ── Backend Web Service (Docker) ──
   - type: web
     name: healthcare-backend
     env: docker
-    dockerfilePath: backend/Dockerfile
-    dockerContext: backend
+    dockerfilePath: AI-Healthcare-Agent/backend/Dockerfile
+    dockerContext: AI-Healthcare-Agent/backend
     plan: free
     region: oregon
     healthCheckPath: /health
@@ -21,7 +22,6 @@ services:
         value: INFO
       - key: DATABASE_URL
         sync: false
-        # Use Neon PostgreSQL: postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require
       - key: JWT_SECRET_KEY
         sync: false
       - key: BACKEND_CORS_ORIGINS
@@ -34,7 +34,6 @@ services:
         value: localhost
       - key: CHROMA_PORT
         value: "8000"
-      # ChromaDB persistence directory on Render disk
       - key: CHROMA_PERSIST_DIR
         value: /chroma/chroma
       - key: REDIS_URL
@@ -54,30 +53,19 @@ services:
       - name: documents
         mountPath: /app/documents
         sizeGB: 1
-      # ChromaDB persistent storage for vector data
-      # NOTE: ChromaDB cannot run as a separate Render service on the free plan
-      # (15-min sleep would terminate it, and persistent disk is shared).
-      # Instead, ChromaDB runs alongside the backend using the persistent disk.
-      # See: docs/chromadb_render.md for full explanation and alternatives.
       - name: chroma
         mountPath: /chroma/chroma
         sizeGB: 1
 
-  # ── Frontend Web Service ──
-  # Note: Next.js with output: "standalone" requires a Node server.
-  # Render "Web Service" (not "Static Site") is required because
-  # standalone output runs `node server.js` at runtime.
+  # ── Frontend Web Service (Docker) ──
   - type: web
     name: healthcare-frontend
-    env: node
-    buildCommand: npm ci && npm run build
-    startCommand: node server.js
-    healthCheckPath: /
+    env: docker
+    dockerfilePath: AI-Healthcare-Agent/frontend/Dockerfile
+    dockerContext: AI-Healthcare-Agent/frontend
     plan: free
     region: oregon
-    dockerfilePath: frontend/Dockerfile
-    # Using Node env instead of Docker for free-tier simplicity.
-    # If using Docker, set env: docker, dockerfilePath: frontend/Dockerfile, dockerContext: frontend
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
