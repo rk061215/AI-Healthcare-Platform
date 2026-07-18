@@ -30,12 +30,6 @@ services:
         sync: false
       - key: AI_PROVIDER
         value: gemini
-      - key: CHROMA_HOST
-        value: localhost
-      - key: CHROMA_PORT
-        value: "8000"
-      - key: CHROMA_PERSIST_DIR
-        value: /chroma/chroma
       - key: REDIS_URL
         value: ""
       - key: SENTRY_DSN
@@ -46,16 +40,16 @@ services:
         value: "10"
       - key: OTEL_EXPORTER_OTLP_ENDPOINT
         value: ""
-    disks:
-      - name: uploads
-        mountPath: /app/uploads
-        sizeGB: 1
-      - name: documents
-        mountPath: /app/documents
-        sizeGB: 1
-      - name: chroma
-        mountPath: /chroma/chroma
-        sizeGB: 1
+      - key: UPLOAD_DIR
+        value: /app/data/uploads
+      - key: DOCUMENT_STORAGE_DIR
+        value: /app/data/documents
+      - key: CHROMA_PERSIST_DIR
+        value: /app/data/chromadb
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
 
   # ── Frontend Web Service (Docker) ──
   - type: web
