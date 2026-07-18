@@ -5,28 +5,26 @@
 
 ---
 
-**Last Updated:** 2026-07-16 10:05 UTC
+**Last Updated:** 2026-07-18
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (Vector Recovery — Phase U.2 complete)
+**Overall Progress:** 100% (Readiness Alignment — Phase U.6 complete)
 
 ---
 
 ## Current Phase
 
-**Phase U.2 — Vector Index Recovery Manager** ✅ COMPLETED
+**Phase U.6 — Readiness Endpoint Consistency Fix** ✅ COMPLETED
 
 ## Current Sprint
 
-**Phase U.2 — Vector Index Recovery Manager** ✅
-- ADR-028 approved: "Index as Derived State" architecture ✅
-- VectorIndexState model + migration 0005 created ✅
-- RecoveryManager: full incremental rebuild with state tracking ✅
-- Startup hook: auto-recovery in main.py lifespan ✅
-- Health check: /ready extended with vector_recovery status ✅
-- CLI: vector_index_cli.py with 5 commands ✅
-- Tests: 18 test cases covering all recovery scenarios ✅
-- Graceful degradation: app serves during rebuild, /health reports degraded ✅
-- Config-driven batch rebuild with API rate limit awareness ✅
+**Phase U.6 — Readiness Endpoint Consistency Fix** ✅
+- ADR-028 architecture aligned: embedded ChromaDB uses PersistentClient ✅
+- Replaced `chromadb.HttpClient()` with `VectorService().health_check()` in monitoring ready endpoint ✅
+- Added vector store details: provider, collection, document_count, distance_function ✅
+- Added recovery status: indexed_reports, pending_rebuild, failed_rebuild, rebuild_in_progress, embedding_model_version ✅
+- Fixed `SessionLocal` missing export in `app/database/session.py` ✅
+- No direct ChromaDB HTTP client dependency in readiness checks ✅
+- Follows existing abstraction pattern: VectorService → BaseVectorStore → Factory → Provider ✅
 
 ---
 

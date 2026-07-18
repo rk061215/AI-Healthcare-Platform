@@ -44,9 +44,11 @@ def get_async_session_local():
     )
 
 
+SessionLocal = get_sync_session_local()
+
+
 def get_db() -> Generator[Session, None, None]:
-    SyncSessionLocal = get_sync_session_local()
-    db = SyncSessionLocal()
+    db = SessionLocal()
     try:
         yield db
     finally:

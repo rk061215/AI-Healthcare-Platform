@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] — 2026-07-16
+## [1.0.0] — 2026-07-18
+
+### Readiness Endpoint Alignment (Phase U.6)
+
+- **Fixed `/api/v1/monitoring/ready`**: replaced `chromadb.HttpClient()` with `VectorService().health_check()` — embedded ChromaDB uses `PersistentClient`, not HTTP server
+- **Added vector store details**: provider, collection, document_count, distance_function in readiness response
+- **Added recovery status**: `RecoveryManager.check_health()` reports indexed_reports, pending_rebuild, failed_rebuild, rebuild_in_progress, embedding_model_version, collection_exists
+- **Fixed missing `SessionLocal` export**: added `SessionLocal` as module-level alias in `app/database/session.py` (unblocked import chain for `RecoveryManager`)
 
 ### Vector Index Recovery (Phase U.2)
 
