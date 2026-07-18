@@ -4,6 +4,46 @@
 
 ---
 
+## Session: 2026-07-18 — Remove Invalid sqlalchemy-asyncpg Dependency
+
+### Goal
+Fix Render build failure caused by `sqlalchemy-asyncpg==0.0.1a1` — a package that doesn't exist on PyPI (alpha version never released).
+
+### Audit
+
+| File | Reference | Found |
+|------|-----------|-------|
+| `requirements.txt` | `sqlalchemy-asyncpg==0.0.1a1` | ✅ Line 17 |
+| Any `.py` file | `import sqlalchemy_asyncpg` | ❌ Not found anywhere |
+| Any `.py` file | `from sqlalchemy_asyncpg` | ❌ Not found anywhere |
+| `pyproject.toml` | — | ❌ Not present |
+| `Dockerfile` | — | ❌ Not present |
+| `setup.py` | — | ❌ Not present |
+
+**Verdict**: Completely unused. Zero imports across the entire repository.
+
+### Why SQLAlchemy Does Not Need It
+
+The code in `backend/app/database/session.py` uses:
+
+```python
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+```
+
+This is **native SQLAlchemy 2.0+** async support — no third-party shim needed. The asyncpg driver is already provided by the `asyncpg==0.30.0` package. The `sqlalchemy-asyncpg` package was an experimental pre-2.0 shim (version `0.0.1a1`) that never reached stable and is completely obsolete.
+
+### Verification
+
+- **Tests**: 1256 passed, 0 regressions (173 pre-existing SQLite JSONB errors unchanged)
+- **Import**: `from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession` — works fine
+- **SQLAlchemy native async**: confirmed working without `sqlalchemy-asyncpg`
+
+### Metrics
+- **Files changed**: 3 (1 requirements.txt, 1 changelog, 1 session notes)
+- **Dependency removed**: `sqlalchemy-asyncpg==0.0.1a1` (unused, never imported)
+
+---
+
 ## Session: 2026-07-18 — Automatic Startup Vector Recovery — Phase U.8 (v1.0.0)
 
 ### Goal

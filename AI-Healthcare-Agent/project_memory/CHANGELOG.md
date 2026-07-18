@@ -32,6 +32,7 @@
 
 ### Fixed
 - Ephemeral storage gap: redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB — system now detects mismatch and auto-rebuilds
+- Removed invalid `sqlalchemy-asyncpg==0.0.1a1` dependency — SQLAlchemy 2.0+ has native async support via `sqlalchemy.ext.asyncio`; only `SQLAlchemy` + `asyncpg` are required
 
 ## [0.17.0] — 2026-07-16
 
