@@ -4,6 +4,55 @@
 
 ---
 
+## Session: 2026-07-19 — Render CLI Integration & Developer Workflow — Phase U.9 (v1.0.0)
+
+### Goal
+Add Render CLI as an **optional** developer productivity tool. No runtime dependency, no vendor lock-in, no changes to application business logic.
+
+### Key Design Decisions
+
+1. **Makefile + PowerShell dual format** — Make targets for Unix/WSL/Git Bash users; `scripts/render.ps1` for native Windows PowerShell
+2. **Configurable variables** — `RENDER`, `RENDER_SERVICE`, `RENDER_BACKEND_URL` can be overridden without editing files
+3. **No secrets in code** — All secrets in `render.yaml` use `sync: false` (set via Dashboard/CLI, not committed)
+4. **Health verification without Render CLI** — `make verify` uses `curl` against the deployed backend URL — works without Render CLI installed
+
+### Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `Makefile` | ~100 | Cross-platform developer targets |
+| `scripts/render.ps1` | ~120 | PowerShell equivalent |
+| `RENDER_CLI_GUIDE.md` | ~280 | Full documentation |
+| `project_memory/RENDER_CLI_INTEGRATION_REPORT.md` | ~100 | Audit and verification report |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `project_memory/CHANGELOG.md` | Added Phase U.9 entry |
+| `project_memory/CURRENT_STATUS.md` | Updated phase, sprint, testing summary, next priority |
+| `project_memory/SESSION_NOTES.md` | This entry |
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| Application code depends on Render CLI | ❌ No |
+| Vendor lock-in introduced | ❌ No |
+| Local development broken | ❌ No |
+| Docker deployment broken | ❌ No |
+| Blueprint behavior changed | ❌ No |
+| Business logic modified | ❌ No |
+| Runtime configuration changed | ❌ No |
+
+### Metrics
+- **Version**: 1.0.0
+- **Progress**: 100%
+- **Files created**: 4 (Makefile, render.ps1, RENDER_CLI_GUIDE.md, RENDER_CLI_INTEGRATION_REPORT.md)
+- **Files modified**: 3 (CHANGELOG.md, CURRENT_STATUS.md, SESSION_NOTES.md)
+
+---
+
 ## Session: 2026-07-18 — Remove Invalid sqlalchemy-asyncpg Dependency
 
 ### Goal

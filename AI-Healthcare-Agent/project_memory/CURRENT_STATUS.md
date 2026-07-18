@@ -5,17 +5,26 @@
 
 ---
 
-**Last Updated:** 2026-07-18
+**Last Updated:** 2026-07-19
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (Free Tier Compatibility — Phase U.8 complete)
+**Overall Progress:** 100% (Free Tier Compatibility + Render CLI Integration — Phase U.9 complete)
 
 ---
 
 ## Current Phase
 
-**Phase U — Free Tier Compatibility** ✅ COMPLETED (U.7 + U.8)
+**Phase U — Free Tier Compatibility & Developer Workflow** ✅ COMPLETED (U.7 + U.8 + U.9)
 
 ## Current Sprint
+
+**Phase U.9 — Render CLI Integration & Developer Workflow** ✅
+- Created `Makefile` with 13 developer targets (deploy, logs, verify, env-check, etc.) ✅
+- Created `scripts/render.ps1` — PowerShell equivalent for Windows ✅
+- Created `RENDER_CLI_GUIDE.md` — full documentation ✅
+- Created `RENDER_CLI_INTEGRATION_REPORT.md` — verification report ✅
+- Zero vendor lock-in — Render CLI is optional, not a runtime dependency ✅
+- Blueprint deployment (`render.yaml`) unchanged ✅
+- Application business logic untouched ✅
 
 **Phase U.8 — Automatic Startup Vector Recovery** ✅
 - Added `actual_document_count` to `VectorHealth` dataclass ✅
@@ -148,7 +157,7 @@
 
 ## Next Priority
 
-**Phase U Complete** — Free tier compatibility and automatic startup vector recovery finished.
+**Phase U Complete** — Free tier compatibility, automatic startup vector recovery, Render CLI developer workflow.
 **Critical gap resolved** — Redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB.
 Next step: Phase Q — Production Deployment & Live System Testing.
 

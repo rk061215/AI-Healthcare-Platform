@@ -5,6 +5,21 @@
 
 ---
 
+## [1.0.0] — 2026-07-19
+
+### Added
+
+#### Phase U.9 — Render CLI Integration & Developer Workflow
+
+- `Makefile` — cross-platform developer targets: `deploy`, `logs`, `verify`, `env-check`, `health`, `ready`, `live`, `status`, `restart`, `redeploy`, `dashboard`
+- `scripts/render.ps1` — PowerShell equivalent for Windows developers
+- `RENDER_CLI_GUIDE.md` — Full documentation covering installation (Win/Linux/macOS), authentication, project configuration, deployment workflow, health verification, environment validation, logging & troubleshooting, CI/CD integration, rollback, and FAQ
+- `project_memory/RENDER_CLI_INTEGRATION_REPORT.md` — Audit report confirming zero vendor lock-in
+
+### Changed
+- Render CLI is strictly optional — application has zero runtime dependency on Render
+- Blueprint deployment (`render.yaml`) remains the sole deployment mechanism — unchanged
+
 ## [1.0.0] — 2026-07-18
 
 ### Added
