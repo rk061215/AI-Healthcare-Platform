@@ -120,6 +120,9 @@ def readiness_probe(db: Session = Depends(get_db)):
         vh = mgr.check_health()
         if vh.status == "healthy":
             checks["vector_recovery"] = f"pass ({vh.indexed_reports} indexed)"
+        elif vh.status == "rebuilding":
+            checks["vector_recovery"] = f"rebuilding ({vh.actual_document_count}/{vh.indexed_reports} indexed)"
+            unready.append("vector_recovery")
         elif vh.status == "degraded":
             checks["vector_recovery"] = f"degraded ({vh.pending_rebuild_count} pending, {vh.failed_rebuild_count} failed)"
             if vh.pending_rebuild_count > 0 or not vh.collection_exists:

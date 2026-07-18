@@ -8,6 +8,7 @@ class VectorHealth:
     status: str = "healthy"
     collection_exists: bool = False
     indexed_reports: int = 0
+    actual_document_count: int = 0
     pending_rebuild_count: int = 0
     failed_rebuild_count: int = 0
     total_reports: int = 0
@@ -22,6 +23,7 @@ class VectorHealth:
             "status": self.status,
             "collection_exists": self.collection_exists,
             "indexed_reports": self.indexed_reports,
+            "actual_document_count": self.actual_document_count,
             "pending_rebuild_count": self.pending_rebuild_count,
             "failed_rebuild_count": self.failed_rebuild_count,
             "total_reports": self.total_reports,

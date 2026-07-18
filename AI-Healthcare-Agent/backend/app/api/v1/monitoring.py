@@ -61,6 +61,7 @@ def readiness_check(db: Session = Depends(get_db)):
         services["vector_recovery"] = vh.status
         services["vector_recovery_details"] = {
             "indexed_reports": vh.indexed_reports,
+            "actual_document_count": vh.actual_document_count,
             "total_reports": vh.total_reports,
             "pending_rebuild": vh.pending_rebuild_count,
             "failed_rebuild": vh.failed_rebuild_count,

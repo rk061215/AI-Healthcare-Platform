@@ -65,8 +65,10 @@ class RecoveryManager(BaseRecoveryManager):
                 vs_health = self._vector_service.health_check()
                 store = vs_health.get("vector_store", {})
                 health.collection_exists = store.get("status") == "ok"
+                health.actual_document_count = store.get("document_count", 0)
             except Exception:
                 health.collection_exists = False
+                health.actual_document_count = 0
 
             total = db.query(func.count(Report.id)).scalar() or 0
             indexed = (
@@ -117,12 +119,22 @@ class RecoveryManager(BaseRecoveryManager):
                 health.status = "degraded"
             elif failed_count > 0:
                 health.status = "degraded"
+            elif (
+                indexed > health.actual_document_count
+                and total > 0
+            ):
+                health.status = "degraded"
             else:
                 health.status = "healthy"
+
+            if health.rebuild_in_progress:
+                health.status = "rebuilding"
 
             health.details = {
                 "rebuild_progress": progress,
                 "collection_status": store.get("status") if health.collection_exists else "missing",
+                "actual_document_count": health.actual_document_count,
+                "expected_report_count": indexed,
             }
         except Exception as exc:
             health.status = "error"
@@ -137,6 +149,9 @@ class RecoveryManager(BaseRecoveryManager):
 
     def rebuild_all(self) -> int:
         db = self._get_db()
+        total = 0
+        completed_count = 0
+        failed_count = 0
         try:
             reports_needing_index = self._determine_work(db)
             if not reports_needing_index:
@@ -193,7 +208,7 @@ class RecoveryManager(BaseRecoveryManager):
             logger.error(f"Vector rebuild failed: {exc}")
             raise RebuildFailedError(str(exc)) from exc
         finally:
-            set_rebuild_progress(in_progress=False)
+            set_rebuild_progress(in_progress=False, total=total, completed=completed_count, failed=failed_count)
             db.close()
 
     def rebuild_report(self, report_id: str) -> bool:
@@ -330,7 +345,9 @@ class RecoveryManager(BaseRecoveryManager):
             f"Vector index status: {health.status} "
             f"(collection={health.collection_exists}, "
             f"pending={health.pending_rebuild_count}, "
-            f"failed={health.failed_rebuild_count})"
+            f"failed={health.failed_rebuild_count}, "
+            f"actual_docs={health.actual_document_count}, "
+            f"indexed={health.indexed_reports})"
         )
 
         if not health.collection_exists:
@@ -339,6 +356,21 @@ class RecoveryManager(BaseRecoveryManager):
                 self._vector_service.store.initialize()
             except Exception as exc:
                 logger.error(f"Failed to initialize vector collection: {exc}")
+
+        # Detect empty store with stale vector_index_state entries (e.g. after
+        # redeploy on ephemeral filesystem). Reset INDEXED → STALE so that
+        # _determine_work() picks them up for rebuild.
+        if (
+            health.indexed_reports > health.actual_document_count
+            and health.indexed_reports > 0
+        ):
+            logger.warning(
+                f"Vector store content mismatch: "
+                f"indexed_reports={health.indexed_reports}, "
+                f"actual_document_count={health.actual_document_count}. "
+                "Marking indexed entries as stale for rebuild."
+            )
+            self._mark_all_indexed_as_stale()
 
         if self._config.rebuild_on_startup:
             logger.info("Starting automatic vector rebuild")
@@ -355,6 +387,28 @@ class RecoveryManager(BaseRecoveryManager):
                 return self.check_health()
 
         return self.check_health()
+
+    def _mark_all_indexed_as_stale(self) -> int:
+        db = self._get_db()
+        try:
+            count = (
+                db.query(VectorIndexState)
+                .filter(VectorIndexState.index_status == IndexStatus.INDEXED.value)
+                .update(
+                    {VectorIndexState.index_status: IndexStatus.STALE.value},
+                    synchronize_session=False,
+                )
+            )
+            db.commit()
+            if count > 0:
+                logger.info(f"Marked {count} indexed entries as stale for rebuild")
+            return count
+        except Exception as exc:
+            db.rollback()
+            logger.error(f"Failed to mark indexed entries as stale: {exc}")
+            return 0
+        finally:
+            db.close()
 
     def _determine_work(self, db: Session) -> list:
         current_model = self._current_model_key()
