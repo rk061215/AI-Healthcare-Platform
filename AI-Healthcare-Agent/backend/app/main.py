@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.openapi.docs import get_redoc_html
 from loguru import logger
+from pydantic import BaseModel
 
 from app.api.v1.live import router as live_router
 from app.api.v1.metrics import router as metrics_router
@@ -89,10 +91,23 @@ app = FastAPI(
     description="AI-powered healthcare follow-up assistant for post-discharge patient monitoring",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc",
+    redoc_url=None,
     openapi_url="/openapi.json",
     lifespan=lifespan,
+    servers=[{"url": "/"}],
 )
+
+REDOC_CDN_URL = "https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"
+
+
+@app.get("/redoc", include_in_schema=False)
+def overridden_redoc():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url=REDOC_CDN_URL,
+    )
+
 
 setup_cors(app)
 setup_error_handlers(app)
@@ -118,7 +133,13 @@ app.include_router(metrics_router)
 setup_opentelemetry(app)
 
 
-@app.get("/health")
+class HealthResponse(BaseModel):
+    status: str
+    version: str
+    vector_store: str
+
+
+@app.get("/health", response_model=HealthResponse)
 def root_health():
     vector_status = "unknown"
     try:

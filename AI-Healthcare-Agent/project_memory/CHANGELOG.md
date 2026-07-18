@@ -27,6 +27,9 @@
 - Render CLI is strictly optional — application has zero runtime dependency on Render
 - Blueprint deployment (`render.yaml`) remains the sole deployment mechanism — unchanged
 - Logging is now cloud-native: containers log to stdout/stderr only by default; file logging requires explicit `LOG_DIR` and a writable filesystem; startup never fails on PermissionError
+- ReDoc CDN URL updated from `redoc@2` (2.5.3, jsdelivr) to `redoc/latest` (official Redocly CDN) for best OpenAPI 3.1 support
+- Added `servers=[{"url": "/"}]` to FastAPI app — fixes empty servers array that can cause ReDoc rendering issues
+- Added explicit `HealthResponse` Pydantic model for `/health` endpoint (was missing `response_model`)
 
 ## [1.0.0] — 2026-07-18
 
