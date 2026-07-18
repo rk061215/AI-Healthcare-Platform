@@ -160,7 +160,26 @@ class Settings(BaseSettings):
     BACKUP_SCHEDULE_CRON: str = "0 3 * * *"  # daily at 3 AM
 
     # Observability — Logging
+    LOG_DIR: str = ""
     LOG_FORMAT: str = "console"  # "json" | "console"
+
+    @property
+    def resolved_log_dir(self) -> str:
+        if self.LOG_DIR:
+            return self.LOG_DIR
+        if self._is_container():
+            return ""
+        return "./logs"
+
+    def _is_container(self) -> bool:
+        import os
+        return bool(
+            self.ENVIRONMENT.lower() in ("production", "staging")
+            or os.environ.get("RENDER")
+            or os.environ.get("KUBERNETES_SERVICE_HOST")
+            or os.environ.get("DOCKER_HOST")
+            or os.path.exists("/.dockerenv")
+        )
 
     # Observability — Sentry
     SENTRY_DSN: str = ""

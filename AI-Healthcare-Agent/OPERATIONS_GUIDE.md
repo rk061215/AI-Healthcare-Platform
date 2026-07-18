@@ -54,6 +54,22 @@
 
 ## 3. Logging
 
+### Cloud-Native Behavior
+
+The logging system detects the running environment automatically:
+
+| Environment | File Logging | Stdout Logging | LOG_DIR default |
+|-------------|-------------|----------------|-----------------|
+| Development (local) | ✅ Enabled | ✅ Yes | `./logs` |
+| Production on Render | ❌ Disabled | ✅ Yes (stdout only) | `""` (empty) |
+| Kubernetes | ❌ Disabled | ✅ Yes (stdout only) | `""` (empty) |
+| Docker (any) | ❌ Disabled | ✅ Yes (stdout only) | `""` (empty) |
+| Custom LOG_DIR set | ✅ Enabled if writable | ✅ Yes | User-specified |
+
+Containers should always rely on platform log collection (stdout/stderr).
+Startup never fails if file logging is unavailable — a warning is logged and
+the application continues with stdout-only logging.
+
 ### Log Format (console)
 ```
 2026-07-16 12:00:00.123 | INFO     | app.main:lifespan:33 - Starting AI Healthcare Assistant API v1.0.0
@@ -74,10 +90,14 @@
 | `ERROR` | Failed operations (DB disconnect, AI provider error) |
 | `CRITICAL` | Unrecoverable failures |
 
-### Setting Log Level
+### Configuration
+
 ```bash
-# Environment variable
-LOG_LEVEL=INFO
+# Environment variables
+LOG_LEVEL=INFO                # Log level (DEBUG, INFO, WARNING, ERROR)
+LOG_FORMAT=console            # "console" | "json"
+LOG_DIR=""                    # Override log directory (empty = auto-detect)
+ENVIRONMENT=development       # "development" | "production" | "staging"
 
 # Production recommendation
 LOG_LEVEL=WARNING

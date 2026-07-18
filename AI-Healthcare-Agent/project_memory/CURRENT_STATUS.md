@@ -7,17 +7,24 @@
 
 **Last Updated:** 2026-07-19
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (Free Tier Compatibility + Render CLI Integration — Phase U.9 complete)
+**Overall Progress:** 100% (Free Tier Compatibility + Render CLI Integration + Cloud-Native Logging — Phase U complete)
 
 ---
 
 ## Current Phase
 
-**Phase U — Free Tier Compatibility & Developer Workflow** ✅ COMPLETED (U.7 + U.8 + U.9)
+**Phase U — Free Tier Compatibility & Developer Workflow** ✅ COMPLETED (U.7 + U.8 + U.9a + U.9b)
 
 ## Current Sprint
 
-**Phase U.9 — Render CLI Integration & Developer Workflow** ✅
+**Phase U.9b — Cloud-Native Logging (Render Deployment Fix)** ✅
+- `LOG_DIR` setting + `resolved_log_dir` auto-detects containers (RENDER, KUBERNETES_SERVICE_HOST, DOCKER_HOST, /.dockerenv, ENVIRONMENT) ✅
+- Loguru `setup_logging()`: stdout always; file only when `resolved_log_dir` is writable; PermissionError caught gracefully ✅
+- stdlib `setup_logging()`: same pattern — console always, rotating file handlers only when writable ✅
+- 12 new tests in `test_logging.py` — all pass ✅
+- `OPERATIONS_GUIDE.md` updated with cloud-native behavior table and configuration docs ✅
+
+**Phase U.9a — Render CLI Integration & Developer Workflow** ✅
 - Created `Makefile` with 13 developer targets (deploy, logs, verify, env-check, etc.) ✅
 - Created `scripts/render.ps1` — PowerShell equivalent for Windows ✅
 - Created `RENDER_CLI_GUIDE.md` — full documentation ✅
@@ -97,6 +104,7 @@
 | Demo Mode (Phase N) | 28 | ✅ All pass |
 | Observability (Phase N) | 35 | ✅ All pass |
 | Security Hardening (Phase N) | 42 | ✅ All pass |
+| Cloud-Native Logging (Phase U.9b) | 12 | ✅ All pass |
 | Vector Recovery (Phase U.8) | 44 | ✅ All pass |
 | Vector Store (Phase C) | 94 | ✅ All pass |
 | Embedding Layer | 57 | ✅ All pass |
@@ -113,7 +121,7 @@
 | Integration Tests | 182 | ✅ All pass |
 | Other (auth, API, services, etc.) | 61 | ✅ All pass |
 | Frontend Service & Store Tests | 40 | ✅ All pass (Vitest) |
-| **Total** | **~2040** | **✅ All pass, zero errors** |
+| **Total** | **~2052** | **✅ All pass, zero errors** |
 
 ## Known Bugs
 
@@ -145,7 +153,7 @@
 
 | Metric | Score | Notes |
 |--------|-------|-------|
-| Test Coverage | 9/10 | ~2084 tests (+44 vector recovery); frontend tests added (40), persistent store tests available |
+| Test Coverage | 9/10 | ~2096 tests (+12 cloud-native logging); frontend tests added (40), persistent store tests available |
 | Code Quality | 9/10 | Clean architecture, consistent patterns, type hints everywhere; appointment service refactored |
 | Documentation | 10/10 | Full documentation suite with release notes, deployment guides, security docs |
 | Extensibility | 10/10 | ABC → Registry → Factory across all AI layers + LangGraph + Validation |
@@ -157,8 +165,8 @@
 
 ## Next Priority
 
-**Phase U Complete** — Free tier compatibility, automatic startup vector recovery, Render CLI developer workflow.
-**Critical gap resolved** — Redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB.
+**Phase U Complete** — Free tier compatibility, automatic startup vector recovery, Render CLI developer workflow, cloud-native logging.
+**Critical gaps resolved** — Redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB. Render deploy no longer crashes with `PermissionError: [Errno 13]` on `/app/logs`.
 Next step: Phase Q — Production Deployment & Live System Testing.
 
 ## Estimated Completion

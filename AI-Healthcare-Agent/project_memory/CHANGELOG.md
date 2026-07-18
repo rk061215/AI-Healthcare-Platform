@@ -16,9 +16,17 @@
 - `RENDER_CLI_GUIDE.md` — Full documentation covering installation (Win/Linux/macOS), authentication, project configuration, deployment workflow, health verification, environment validation, logging & troubleshooting, CI/CD integration, rollback, and FAQ
 - `project_memory/RENDER_CLI_INTEGRATION_REPORT.md` — Audit report confirming zero vendor lock-in
 
+#### Phase U.9b — Cloud-Native Logging (Render Deployment Fix)
+
+- `app/core/config.py`: Added `LOG_DIR: str = ""` setting, `resolved_log_dir` property (auto-detects containers via `RENDER`, `KUBERNETES_SERVICE_HOST`, `DOCKER_HOST`, `/.dockerenv`, `ENVIRONMENT`), `_is_container()` helper
+- `app/core/logging.py` (Loguru): stdout sink always added; file sink only when `resolved_log_dir` is non-empty and directory creation succeeds — falls back gracefully on `PermissionError`/`OSError`
+- `app/core/logging_config.py` (stdlib): same pattern — console handler always, rotating file handlers only when `resolved_log_dir` is writable
+- `tests/test_services/test_logging.py`: 12 new tests covering development/production/container detection, custom LOG_DIR, stdout-only fallback, unwritable directory, permission error, k8s/dockerenv detection, stdlib stdout-only
+
 ### Changed
 - Render CLI is strictly optional — application has zero runtime dependency on Render
 - Blueprint deployment (`render.yaml`) remains the sole deployment mechanism — unchanged
+- Logging is now cloud-native: containers log to stdout/stderr only by default; file logging requires explicit `LOG_DIR` and a writable filesystem; startup never fails on PermissionError
 
 ## [1.0.0] — 2026-07-18
 

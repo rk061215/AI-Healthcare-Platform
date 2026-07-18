@@ -4,7 +4,60 @@
 
 ---
 
-## Session: 2026-07-19 — Render CLI Integration & Developer Workflow — Phase U.9 (v1.0.0)
+## Session: 2026-07-19 — Cloud-Native Logging — Phase U.9b (v1.0.0)
+
+### Goal
+Fix Render deployment crash: `PermissionError: [Errno 13]` when Loguru tries to write to `/app/logs` in Render's read-only application directory. Make logging work seamlessly across local dev, Docker, Render, Railway, Fly.io, Kubernetes, and any container runtime.
+
+### Root Cause
+Two logging configurations (`app/core/logging.py` and `app/core/logging_config.py`) both hardcoded `Path('logs')` which resolves to `WORKDIR` (`/app/`) at runtime. Render containers have a **read-only application directory** — `/app/logs/` cannot be created or written to. The `PermissionError` crashed the entire application during startup (lifespan).
+
+### What Changed
+
+**`app/core/config.py`**:
+- Added `LOG_DIR: str = ""` setting (empty = auto-detect)
+- Added `resolved_log_dir` property: returns `Path(LOG_DIR)` if set, otherwise returns `Path("logs")` for development, `Path("")` for containers
+- Added `_is_container()`: detects containers via `RENDER`, `KUBERNETES_SERVICE_HOST`, `DOCKER_HOST`, `/.dockerenv` existence, or `ENVIRONMENT=production/staging`
+
+**`app/core/logging.py` (Loguru)**:
+- stdout sink added unconditionally at `INFO` level
+- File sink added only when `resolved_log_dir` is non-empty and directory creation succeeds
+- `PermissionError`/`OSError` caught with `logger.warning()` — startup continues gracefully
+
+**`app/core/logging_config.py` (stdlib)**:
+- Console handler always added
+- Rotating file handlers (`app.log`, `error.log`) created only when `resolved_log_dir` is writable
+- Same `PermissionError`/`OSError` catch pattern
+
+**`tests/test_services/test_logging.py`**:
+- 12 new tests: development default (dir created), production (no dir), container detection (3 env vars), custom LOG_DIR (file logging works), stdout-only (no dir), file logging with content, unwritable directory, permission error (PermissionError logged and skipped), k8s detection, dockerenv detection, stdlib stdout-only fallback
+
+**`OPERATIONS_GUIDE.md`**:
+- Updated section 3 (Logging) with cloud-native behavior table (Development, Render, Kubernetes, Docker, Custom LOG_DIR), configuration reference
+
+**`project_memory/CHANGELOG.md`** — Added Phase U.9b entry
+**`project_memory/CURRENT_STATUS.md`** — Updated phase, sprint, test totals, next priority
+
+### Key Design Principles
+1. **Stdout always** — Every environment logs to stdout/stderr. Container platforms collect these natively.
+2. **File logging optional** — Only when `LOG_DIR` is explicitly set AND the directory is writable.
+3. **Never fail on PermissionError** — Application starts and works regardless of filesystem constraints.
+4. **Zero config needed** — Works out of the box on Render, Docker, local dev with no env var changes.
+5. **Both logging frameworks** — Both Loguru and stdlib logging follow the same convention.
+
+### Generated Reports
+- *(Pending)* `LOGGING_DEPLOYMENT_FIX.md`
+
+### Metrics
+- **Version**: 1.0.0
+- **Progress**: 100%
+- **Files changed**: 6 (config.py, logging.py, logging_config.py, test_logging.py, OPERATIONS_GUIDE.md, CHANGELOG.md)
+- **Tests added**: 12 new, all passing
+- **Critical gaps resolved**: 1 (Render PermissionError crash on `/app/logs`)
+
+---
+
+## Session: 2026-07-19 — Render CLI Integration & Developer Workflow — Phase U.9a (v1.0.0)
 
 ### Goal
 Add Render CLI as an **optional** developer productivity tool. No runtime dependency, no vendor lock-in, no changes to application business logic.
@@ -29,7 +82,7 @@ Add Render CLI as an **optional** developer productivity tool. No runtime depend
 
 | File | Change |
 |------|--------|
-| `project_memory/CHANGELOG.md` | Added Phase U.9 entry |
+| `project_memory/CHANGELOG.md` | Added Phase U.9a entry |
 | `project_memory/CURRENT_STATUS.md` | Updated phase, sprint, testing summary, next priority |
 | `project_memory/SESSION_NOTES.md` | This entry |
 

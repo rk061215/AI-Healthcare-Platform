@@ -63,6 +63,7 @@ class InterceptHandler(logging.Handler):
 def setup_logging() -> None:
     is_json = settings.LOG_FORMAT == "json"
     log_level = settings.LOG_LEVEL.upper()
+    log_dir_setting = settings.resolved_log_dir
 
     logger.remove()
 
@@ -77,15 +78,6 @@ def setup_logging() -> None:
             colorize=False,
             filter=pii_filter,
         )
-        logger.add(
-            Path("logs") / "healthcare_{time:YYYY-MM-DD}.json",
-            format=formatter,
-            level=log_level,
-            rotation="1 day",
-            retention="30 days",
-            compression="gz",
-            filter=pii_filter,
-        )
     else:
         console_format = (
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
@@ -93,9 +85,6 @@ def setup_logging() -> None:
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
             "<level>{message}</level>"
         )
-        if settings.DEBUG:
-            console_format += " | <magenta>{extra[request_id]}</magenta>" if False else ""
-
         logger.add(
             sys.stdout,
             format=console_format,
@@ -103,15 +92,35 @@ def setup_logging() -> None:
             colorize=True,
             filter=pii_filter,
         )
-        logger.add(
-            Path("logs") / "healthcare_{time:YYYY-MM-DD}.log",
-            format=console_format,
-            level=log_level,
-            rotation="1 day",
-            retention="30 days",
-            compression="gz",
-            filter=pii_filter,
-        )
+
+    if log_dir_setting:
+        log_dir = Path(log_dir_setting)
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True)
+            if is_json:
+                logger.add(
+                    log_dir / "healthcare_{time:YYYY-MM-DD}.json",
+                    format=formatter,
+                    level=log_level,
+                    rotation="1 day",
+                    retention="30 days",
+                    compression="gz",
+                    filter=pii_filter,
+                )
+            else:
+                logger.add(
+                    log_dir / "healthcare_{time:YYYY-MM-DD}.log",
+                    format=console_format,
+                    level=log_level,
+                    rotation="1 day",
+                    retention="30 days",
+                    compression="gz",
+                    filter=pii_filter,
+                )
+        except PermissionError:
+            logger.warning(f"Cannot write logs to {log_dir} — permission denied. Falling back to stdout only.")
+        except OSError as exc:
+            logger.warning(f"Cannot write logs to {log_dir} — {exc}. Falling back to stdout only.")
 
     logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=True)
 
@@ -119,4 +128,7 @@ def setup_logging() -> None:
         logging_logger = logging.getLogger(logger_name)
         logging_logger.handlers = [InterceptHandler()]
 
-    logger.info("Logging configured successfully")
+    logger.info(
+        f"Logging configured — stdout={log_level}"
+        + (f", file={log_dir_setting}" if log_dir_setting else "")
+    )
