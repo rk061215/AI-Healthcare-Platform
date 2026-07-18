@@ -25,7 +25,7 @@ services:
       - key: JWT_SECRET_KEY
         sync: false
       - key: BACKEND_CORS_ORIGINS
-        value: https://healthcare-frontend.onrender.com
+        value: https://healthcare-frontend.onrender.com,https://ai-healthcare-platform-deploy-initial-2456jmy3b.vercel.app
       - key: GEMINI_API_KEY
         sync: false
       - key: AI_PROVIDER
