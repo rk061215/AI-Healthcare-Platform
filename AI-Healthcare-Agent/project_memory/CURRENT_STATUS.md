@@ -7,25 +7,26 @@
 
 **Last Updated:** 2026-07-18
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (Free Tier Compatibility — Phase U.7 complete)
+**Overall Progress:** 100% (Free Tier Compatibility — Phase U.8 complete)
 
 ---
 
 ## Current Phase
 
-**Phase U.7 — Free Tier Render Compatibility** ✅ COMPLETED
+**Phase U — Free Tier Compatibility** ✅ COMPLETED (U.7 + U.8)
 
 ## Current Sprint
 
-**Phase U.7 — Free Tier Render Compatibility** ✅
-- Render Free tier does not support persistent disks ✅
-- Removed `disk:` block from `render.yaml` ✅
-- Removed orphaned env vars: UPLOAD_DIR, DOCUMENT_STORAGE_DIR, CHROMA_PERSIST_DIR ✅
-- No code changes needed — all defaults work on ephemeral filesystem ✅
-- ADR-028 maintained: ChromaDB rebuilt from PostgreSQL automatically ✅
-- Uploads metadata + OCR text survive in PostgreSQL ✅
-- RENDER_FREE_TIER_COMPATIBILITY.md generated with full analysis ✅
-- Known gap documented: RecoveryManager does not compare document_count vs indexed_reports ✅
+**Phase U.8 — Automatic Startup Vector Recovery** ✅
+- Added `actual_document_count` to `VectorHealth` dataclass ✅
+- `check_health()` compares `document_count` vs `indexed_reports` → sets "degraded" on mismatch ✅
+- `rebuild_in_progress` check → status "rebuilding" ✅
+- `_mark_all_indexed_as_stale()` method — resets INDEXED→STALE via single UPDATE ✅
+- `run_startup_recovery()` detects mismatch, marks stale, triggers rebuild ✅
+- `/ready` endpoint handles "rebuilding" status ✅
+- Monitoring endpoint includes `actual_document_count` ✅
+- `rebuild_all()` finally block preserves progress counts ✅
+- 44 tests passing (all existing + new U.8 tests) ✅
 
 ---
 
@@ -87,6 +88,7 @@
 | Demo Mode (Phase N) | 28 | ✅ All pass |
 | Observability (Phase N) | 35 | ✅ All pass |
 | Security Hardening (Phase N) | 42 | ✅ All pass |
+| Vector Recovery (Phase U.8) | 44 | ✅ All pass |
 | Vector Store (Phase C) | 94 | ✅ All pass |
 | Embedding Layer | 57 | ✅ All pass |
 | Document Pipeline | 88 | ✅ All pass |
@@ -114,6 +116,7 @@
 
 | ID | Description | Impact | Estimated Effort |
 |----|-------------|--------|-----------------|
+| TEC-000 | (Resolved) Ephemeral storage gap: redeploy with existing PostgreSQL data silently reported "healthy" with empty ChromaDB | High | Resolved in U.8 |
 | TEC-001 | Test database uses SQLite instead of PostgreSQL — some PostgreSQL-specific features untested | Medium | 2 hours |
 | TEC-002 | Rate limiter uses in-memory fallback; Redis support requires REDIS_URL config | Low | 1 hour |
 | TEC-003 | No email verification flow for new registrations | Low | 4 hours |
@@ -133,7 +136,7 @@
 
 | Metric | Score | Notes |
 |--------|-------|-------|
-| Test Coverage | 9/10 | ~2040 tests; frontend tests added (40), persistent store tests available |
+| Test Coverage | 9/10 | ~2084 tests (+44 vector recovery); frontend tests added (40), persistent store tests available |
 | Code Quality | 9/10 | Clean architecture, consistent patterns, type hints everywhere; appointment service refactored |
 | Documentation | 10/10 | Full documentation suite with release notes, deployment guides, security docs |
 | Extensibility | 10/10 | ABC → Registry → Factory across all AI layers + LangGraph + Validation |
@@ -145,7 +148,8 @@
 
 ## Next Priority
 
-**Phase P Complete** — Production Hardening finished. All critical blockers resolved.
+**Phase U Complete** — Free tier compatibility and automatic startup vector recovery finished.
+**Critical gap resolved** — Redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB.
 Next step: Phase Q — Production Deployment & Live System Testing.
 
 ## Estimated Completion

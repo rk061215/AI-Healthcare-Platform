@@ -5,6 +5,34 @@
 
 ---
 
+## [1.0.0] — 2026-07-18
+
+### Added
+
+#### Phase U — Free Tier Compatibility & Startup Vector Recovery
+
+##### U.7 — Free Tier Render Compatibility
+- Removed `disk:` block from `render.yaml` (Free tier doesn't support persistent disks)
+- Removed orphaned env vars: `UPLOAD_DIR`, `DOCUMENT_STORAGE_DIR`, `CHROMA_PERSIST_DIR`
+- All three directories use code defaults (`./uploads`, `./documents`, `./chromadb_data`) resolving to WORKDIR `/app/`
+- Known gap documented: `RecoveryManager` does not compare actual `document_count` vs `indexed_reports`
+
+##### U.8 — Automatic Startup Vector Recovery
+- Added `actual_document_count` field to `VectorHealth` dataclass (`app/vector_recovery/health.py`)
+- Modified `check_health()` to extract `document_count` from store health, compare against `indexed_reports`, set status to "degraded" when `indexed > actual_document_count` and `total > 0`
+- Added `rebuild_in_progress` check — status set to "rebuilding" when `in_progress` is `True`
+- Added `_mark_all_indexed_as_stale()` method to `RecoveryManager` — resets INDEXED→STALE via single UPDATE query with rollback on error
+- Modified `run_startup_recovery()` — detects `indexed_reports > actual_document_count`, calls `_mark_all_indexed_as_stale()` before `rebuild_all()`
+- Updated `/ready` endpoint to handle "rebuilding" status
+- Updated monitoring endpoint to include `actual_document_count` in response details
+- 44 tests passing for vector recovery (all existing + 7 new U.8 tests)
+
+### Changed
+- `recovery_manager.py::rebuild_all()` — `finally` block now preserves `total`/`completed`/`failed` counts in progress state
+
+### Fixed
+- Ephemeral storage gap: redeploy with existing PostgreSQL data no longer silently reports "healthy" with empty ChromaDB — system now detects mismatch and auto-rebuilds
+
 ## [0.17.0] — 2026-07-16
 
 ### Added

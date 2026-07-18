@@ -4,64 +4,43 @@
 
 ---
 
-## Session: 2026-07-18 — Render Free Tier Compatibility — Phase U.7 (v1.0.0)
+## Session: 2026-07-18 — Automatic Startup Vector Recovery — Phase U.8 (v1.0.0)
 
 ### Goal
-Adapt the deployment for Render Free tier, which does not support persistent disks. Must maintain ADR-028 ("Index as Derived State") and the automatic vector recovery workflow.
+Fix the pre-existing gap where `RecoveryManager.check_health()` did not compare actual `document_count` from ChromaDBStore against `indexed_reports` from `vector_index_state`. After a Render redeploy (ephemeral FS destroyed), ChromaDB would be empty but `vector_index_state` still said INDEXED → status "healthy" → rebuild skipped → searches returned zero results.
 
-### What Happened
+### What Changed
 
-Render Blueprint validation failed with:
+**`health.py`** — Added `actual_document_count` to `VectorHealth` dataclass (with `to_dict()`)
 
-```
-services[0].disks are not supported for free tier services
-```
+**`recovery_manager.py`**:
+- `check_health()`: extracts `document_count` from store health, compares against `indexed_reports`, sets "degraded" when `indexed > actual_document_count` and `total > 0`
+- `rebuild_in_progress` check → status "rebuilding" when True
+- New `_mark_all_indexed_as_stale()`: single UPDATE query resets INDEXED→STALE, with rollback on error
+- `run_startup_recovery()`: detects mismatch, calls `_mark_all_indexed_as_stale()` before `rebuild_all()`
+- `rebuild_all()`: `finally` block preserves `total`/`completed`/`failed` progress counts
 
-### Audit Findings
+**`ready.py`** — `/ready` endpoint handles "rebuilding" status
 
-**Storage classification across the project**:
+**`monitoring.py`** — Added `actual_document_count` to response details
 
-| Path | Type | Content | Source of Truth |
-|------|------|---------|-----------------|
-| PostgreSQL (Neon) | Persistent | Reports, OCR text, metadata, vector_index_state | ✅ Yes |
-| `./chromadb_data` | Ephemeral | ChromaDB vector index | ❌ No — rebuilt by RecoveryManager |
-| `./uploads` | Ephemeral | Raw uploaded files (PDFs, images) | ❌ No — metadata + OCR text in PostgreSQL |
-| `./documents` | Ephemeral | Processed document storage | ❌ No — same as uploads |
+**`tests/test_vector_recovery.py`** — Complete rewrite:
+- Removed fragile deep-mock chains that froze test correctness
+- `_setup_health()` uses `return_value` for direct `.scalar()` calls and `cycle()` for filter chains (repeatable across multiple `check_health()` invocations)
+- 7 new U.8 tests: degraded mismatch, rebuilding status, startup recovery mark stale, startup recovery skip when matching, `_mark_all_indexed_as_stale()` (3 variants), `to_dict` includes actual_document_count
+- 44 total tests — all passing
 
-### Changes Made
-
-**`render.yaml`**:
-- Removed `disk:` block entirely (the only change needed for the schema validation error)
-- Removed 3 env vars that referenced the disk mount: `UPLOAD_DIR`, `DOCUMENT_STORAGE_DIR`, `CHROMA_PERSIST_DIR`
-- All three directories use code defaults: `./uploads`, `./documents`, `./chromadb_data` — all resolve to WORKDIR `/app/`
-
-**No Python code modified** — the application already works on ephemeral storage. All actionable data (OCR text, metadata, document references) lives in PostgreSQL.
-
-### Startup Validation
-
-**Fresh deploy (empty DB)**: ✅ System reaches HEALTHY immediately.
-1. `alembic upgrade head` creates tables
-2. `ChromaDBStore.initialize()` creates collection
-3. `RecoveryManager.check_health()` → no reports → status healthy
-
-**Redeploy with existing data**: ⚠️ Known gap.
-1. `ChromaDBStore.initialize()` creates new (empty) collection
-2. `check_health()`: collection_exists=True, indexed_reports=M (from vector_index_state in PostgreSQL)
-3. `status == "healthy"` → RecoveryManager skips rebuild
-4. ChromaDB is empty but system reports healthy — searches return no results
-
-**Root cause**: `check_health()` does not compare `ChromaDBStore.health_check().document_count` against `vector_index_state.indexed_reports`. The condition `pending > 0` is never triggered because the old vector_index_state entries still say "INDEXED."
-
-### Key Insight
-
-This gap existed before removing the disk — it would manifest whenever the ChromaDB collection was destroyed independently of PostgreSQL (e.g., filesystem corruption, manual deletion). The ephemeral Filesystem on Render Free just makes it more likely.
+### Key Design Decisions
+- `_setup_health()` uses `itertools.cycle()` for filter mock chain instead of finite `side_effect`, so `run_startup_recovery()` tests (which call `check_health()` twice) work without manual mock reset
+- `_mark_all_indexed_as_stale()` isolated as own method rather than inline — makes U.8 testable and reusable
+- `finally` block fix in `rebuild_all()` was essential — without it, progress tracking reset to defaults before tests could read it
 
 ### Generated Reports
-- `RENDER_FREE_TIER_COMPATIBILITY.md` — Full analysis, storage classification, recovery workflow, verification results
+- `AUTOMATIC_VECTOR_RECOVERY_REPORT.md` — Full analysis, changes, test results, verification
 
 ### Metrics
 - **Version**: 1.0.0
 - **Progress**: 100%
-- **Files changed**: 6 (1 render.yaml, 1 playbook, 1 audit, 2 project memory, 1 changelog)
-- **Reports generated**: 1 (RENDER_FREE_TIER_COMPATIBILITY.md)
-- **Blueprint status**: Should validate on Free tier
+- **Files changed**: 8 (health.py, recovery_manager.py, ready.py, monitoring.py, test_vector_recovery.py, CHANGELOG.md, CURRENT_STATUS.md, SESSION_NOTES.md)
+- **Tests added**: 7 new, 44 total (all passing)
+- **Known gaps resolved**: 1 (ephemeral storage startup vector recovery)
