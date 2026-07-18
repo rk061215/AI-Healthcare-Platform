@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] — 2026-07-18
 
+### Render Free Tier Compatibility (Phase U.7)
+
+- **Removed persistent disk**: `render.yaml` no longer has `disk:` block — Render Free tier does not support disks
+- **Removed orphaned env vars**: `UPLOAD_DIR`, `DOCUMENT_STORAGE_DIR`, `CHROMA_PERSIST_DIR` (all pointed to disk mount)
+- **Defaults work on ephemeral FS**: `./uploads`, `./documents`, `./chromadb_data` all resolve to WORKDIR `/app/` — no code changes needed
+- **ADR-028 maintained**: ChromaDB stays ephemeral, rebuilt from PostgreSQL by RecoveryManager
+- **Known gap documented**: `check_health()` does not compare `document_count` vs `indexed_reports` — on redeploy with existing data, ChromaDB may be empty but status reports "healthy"
+
 ### Readiness Endpoint Alignment (Phase U.6)
 
 - **Fixed `/api/v1/monitoring/ready`**: replaced `chromadb.HttpClient()` with `VectorService().health_check()` — embedded ChromaDB uses `PersistentClient`, not HTTP server

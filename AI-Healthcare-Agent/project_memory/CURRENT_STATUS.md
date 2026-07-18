@@ -7,24 +7,25 @@
 
 **Last Updated:** 2026-07-18
 **Current Version:** 1.0.0
-**Overall Progress:** 100% (Readiness Alignment — Phase U.6 complete)
+**Overall Progress:** 100% (Free Tier Compatibility — Phase U.7 complete)
 
 ---
 
 ## Current Phase
 
-**Phase U.6 — Readiness Endpoint Consistency Fix** ✅ COMPLETED
+**Phase U.7 — Free Tier Render Compatibility** ✅ COMPLETED
 
 ## Current Sprint
 
-**Phase U.6 — Readiness Endpoint Consistency Fix** ✅
-- ADR-028 architecture aligned: embedded ChromaDB uses PersistentClient ✅
-- Replaced `chromadb.HttpClient()` with `VectorService().health_check()` in monitoring ready endpoint ✅
-- Added vector store details: provider, collection, document_count, distance_function ✅
-- Added recovery status: indexed_reports, pending_rebuild, failed_rebuild, rebuild_in_progress, embedding_model_version ✅
-- Fixed `SessionLocal` missing export in `app/database/session.py` ✅
-- No direct ChromaDB HTTP client dependency in readiness checks ✅
-- Follows existing abstraction pattern: VectorService → BaseVectorStore → Factory → Provider ✅
+**Phase U.7 — Free Tier Render Compatibility** ✅
+- Render Free tier does not support persistent disks ✅
+- Removed `disk:` block from `render.yaml` ✅
+- Removed orphaned env vars: UPLOAD_DIR, DOCUMENT_STORAGE_DIR, CHROMA_PERSIST_DIR ✅
+- No code changes needed — all defaults work on ephemeral filesystem ✅
+- ADR-028 maintained: ChromaDB rebuilt from PostgreSQL automatically ✅
+- Uploads metadata + OCR text survive in PostgreSQL ✅
+- RENDER_FREE_TIER_COMPATIBILITY.md generated with full analysis ✅
+- Known gap documented: RecoveryManager does not compare document_count vs indexed_reports ✅
 
 ---
 

@@ -32,14 +32,14 @@
 | Backend | `GET /health` | `{"status": "healthy", "version": "1.0.0", "vector_store": "..."}` |
 | Frontend | `GET /` | Next.js root page (200 OK) |
 
-### Persistent Disk
+### Storage
 
-| Property | Value |
-|----------|-------|
-| Name | `data` |
-| Mount path | `/app/data` |
-| Size | 1 GB |
-| Backend dirs on disk | `/app/data/uploads` → `UPLOAD_DIR`, `/app/data/documents` → `DOCUMENT_STORAGE_DIR` |
+All storage is **ephemeral** (Render Free tier does not support persistent disks). The application does not depend on persistent local storage:
+
+- **PostgreSQL** (Neon, external) — source of truth for all data
+- **ChromaDB** (`./chromadb_data`) — ephemeral, rebuilt from PostgreSQL per ADR-028
+- **Uploads** (`./uploads`) — ephemeral; metadata + OCR text survive in PostgreSQL
+- **Documents** (`./documents`) — ephemeral; same as uploads
 
 ---
 
@@ -62,9 +62,8 @@
 | `RATE_LIMIT_PER_MINUTE` | plain | `120` |
 | `RATE_LIMIT_LOGIN_PER_MINUTE` | plain | `10` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | plain | `""` (empty — telemetry disabled) |
-| `UPLOAD_DIR` | plain | `/app/data/uploads` |
-| `DOCUMENT_STORAGE_DIR` | plain | `/app/data/documents` |
-| `CHROMA_PERSIST_DIR` | plain | `/app/data/chromadb` (documents intent; code reads `VectorStoreConfig.persist_directory` default `./chromadb_data`) |
+| `UPLOAD_DIR` | plain | `./uploads` (default — resolved to WORKDIR `/app/uploads`) |
+| `DOCUMENT_STORAGE_DIR` | plain | `./documents` (default — resolved to WORKDIR `/app/documents`) |
 
 ### Frontend (`healthcare-frontend`)
 

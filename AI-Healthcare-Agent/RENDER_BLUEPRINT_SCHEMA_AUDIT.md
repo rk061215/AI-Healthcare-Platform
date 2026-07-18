@@ -2,7 +2,9 @@
 
 ## Summary
 
-Render Blueprint schema validation after resolving the `disks:` → `disk:` error.
+Render Blueprint schema validation for Free tier deployment.
+
+**Free Tier Update**: Render Free does not support persistent disks. The `disk:` block was removed entirely. See `RENDER_FREE_TIER_COMPATIBILITY.md` for full analysis.
 
 ## Root Cause
 
@@ -48,12 +50,14 @@ Per **ADR-028 (Vector Storage Strategy, Option E)**:
 ## Validation
 
 - `render.yaml` parsed successfully by Python `yaml.safe_load()` — syntax valid
-- All paths use `/app/data` (the disk mount point) as prefix with subdirectories
-- No duplicate env var keys
+- No `disk:` block (Free tier does not support disks)
+- No orphaned env vars referencing `/app/data`
+- Blueprint has 0 paid features
 - Push to `main` succeeded
 
 ## Next Steps
 
-1. [ ] Attempt Render Blueprint deploy via Render Dashboard (Import from repo)
-2. [ ] If schema validation passes, monitor the first deploy for runtime issues
-3. [ ] If schema validation fails, inspect Render error message and iterate
+1. [ ] Deploy via Render Dashboard → New → Blueprint → select repo
+2. [ ] Set 3 secrets: `DATABASE_URL`, `JWT_SECRET_KEY`, `GEMINI_API_KEY`
+3. [ ] Verify `GET /health` returns `{"status": "healthy"}`
+4. [ ] Verify `GET /ready` returns `{"status": "ready"}`

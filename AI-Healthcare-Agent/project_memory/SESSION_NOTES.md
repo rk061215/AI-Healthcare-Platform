@@ -4,53 +4,64 @@
 
 ---
 
-## Session: 2026-07-18 — Readiness Endpoint Consistency Fix — Phase U.6 (v1.0.0)
+## Session: 2026-07-18 — Render Free Tier Compatibility — Phase U.7 (v1.0.0)
 
 ### Goal
-Fix the `/api/v1/monitoring/ready` endpoint which used `chromadb.HttpClient()` to check ChromaDB health, but the application runs ChromaDB embedded via `PersistentClient()`. This caused false `DEGRADED` readiness even when the vector store was healthy.
+Adapt the deployment for Render Free tier, which does not support persistent disks. Must maintain ADR-028 ("Index as Derived State") and the automatic vector recovery workflow.
 
-### What Was Completed
+### What Happened
 
-#### Part 1 — Audit
-- Inspected `monitoring.py`, `health.py`, `VectorService`, `VectorStoreFactory`, `ChromaDBStore`
-- Confirmed `ChromaDBStore` always uses `chromadb.PersistentClient()` (embedded) — no HTTP server
-- `VectorService.health_check()` delegates to `BaseVectorStore.health_check()` → `ChromaDBStore.health_check()` which uses `self._client.heartbeat()` (in-process, not HTTP)
-- `ready.py` (at `/ready`) already uses `VectorService().health_check()` correctly — pattern to follow
-- The broken endpoint was `monitoring.py` at `/api/v1/monitoring/ready`
+Render Blueprint validation failed with:
 
-#### Part 2 — Fix
-- Replaced `chromadb.HttpClient()` with `VectorService().health_check()` from the existing abstraction layer
-- Removed `import chromadb` and inline `HttpClient` connection logic
-- Added `RecoveryManager.check_health()` to report vector index recovery status
-- Response now includes: vector_store, embedding_service, vector_recovery statuses + detail fields
+```
+services[0].disks are not supported for free tier services
+```
 
-#### Part 3 — Health Report
-- `GET /api/v1/monitoring/ready` now returns:
-  - `database` status (db ping)
-  - `vector_store` status (via VectorService → BaseVectorStore → ChromaDBStore)
-  - `vector_store_details` — provider, collection, document_count, distance_function
-  - `embedding_service` status
-  - `vector_recovery` status (via RecoveryManager.check_health)
-  - `vector_recovery_details` — indexed_reports, total_reports, pending_rebuild, failed_rebuild, rebuild_in_progress, embedding_model_version, collection_exists
+### Audit Findings
 
-#### Part 4 — Regression
-- Core vector store health check tests pass: `test_health_check_ok`, `test_health_check`
-- Pre-existing SQLite/JSONB incompatibility blocks full test suite — unrelated to change
-- Fixed missing `SessionLocal` export in `app/database/session.py` that blocked the entire test import chain
+**Storage classification across the project**:
 
-#### Part 5 — Documentation
-- Updated CHANGELOG.md with Phase U.6 entry
-- Updated CURRENT_STATUS.md to Phase U.6
-- Updated SESSION_NOTES.md with this session
-- RENDER_DEPLOYMENT_PLAYBOOK.md updated with readiness endpoint details
+| Path | Type | Content | Source of Truth |
+|------|------|---------|-----------------|
+| PostgreSQL (Neon) | Persistent | Reports, OCR text, metadata, vector_index_state | ✅ Yes |
+| `./chromadb_data` | Ephemeral | ChromaDB vector index | ❌ No — rebuilt by RecoveryManager |
+| `./uploads` | Ephemeral | Raw uploaded files (PDFs, images) | ❌ No — metadata + OCR text in PostgreSQL |
+| `./documents` | Ephemeral | Processed document storage | ❌ No — same as uploads |
 
-### Key Changes
-- `app/api/v1/monitoring.py` — replaced `chromadb.HttpClient()` → `VectorService().health_check()`, added recovery status
-- `app/database/session.py` — added `SessionLocal` as module-level alias (fixes import chain)
+### Changes Made
+
+**`render.yaml`**:
+- Removed `disk:` block entirely (the only change needed for the schema validation error)
+- Removed 3 env vars that referenced the disk mount: `UPLOAD_DIR`, `DOCUMENT_STORAGE_DIR`, `CHROMA_PERSIST_DIR`
+- All three directories use code defaults: `./uploads`, `./documents`, `./chromadb_data` — all resolve to WORKDIR `/app/`
+
+**No Python code modified** — the application already works on ephemeral storage. All actionable data (OCR text, metadata, document references) lives in PostgreSQL.
+
+### Startup Validation
+
+**Fresh deploy (empty DB)**: ✅ System reaches HEALTHY immediately.
+1. `alembic upgrade head` creates tables
+2. `ChromaDBStore.initialize()` creates collection
+3. `RecoveryManager.check_health()` → no reports → status healthy
+
+**Redeploy with existing data**: ⚠️ Known gap.
+1. `ChromaDBStore.initialize()` creates new (empty) collection
+2. `check_health()`: collection_exists=True, indexed_reports=M (from vector_index_state in PostgreSQL)
+3. `status == "healthy"` → RecoveryManager skips rebuild
+4. ChromaDB is empty but system reports healthy — searches return no results
+
+**Root cause**: `check_health()` does not compare `ChromaDBStore.health_check().document_count` against `vector_index_state.indexed_reports`. The condition `pending > 0` is never triggered because the old vector_index_state entries still say "INDEXED."
+
+### Key Insight
+
+This gap existed before removing the disk — it would manifest whenever the ChromaDB collection was destroyed independently of PostgreSQL (e.g., filesystem corruption, manual deletion). The ephemeral Filesystem on Render Free just makes it more likely.
+
+### Generated Reports
+- `RENDER_FREE_TIER_COMPATIBILITY.md` — Full analysis, storage classification, recovery workflow, verification results
 
 ### Metrics
 - **Version**: 1.0.0
 - **Progress**: 100%
-- **Changes**: 2 files modified
-- **Tests passing**: Vector store health checks (2/2)
-- **Architecture alignment**: Readiness endpoint now uses the same abstraction as `/ready` endpoint
+- **Files changed**: 6 (1 render.yaml, 1 playbook, 1 audit, 2 project memory, 1 changelog)
+- **Reports generated**: 1 (RENDER_FREE_TIER_COMPATIBILITY.md)
+- **Blueprint status**: Should validate on Free tier
