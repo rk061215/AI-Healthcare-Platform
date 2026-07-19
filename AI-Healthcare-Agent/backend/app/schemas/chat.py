@@ -22,7 +22,7 @@ class ChatMessageResponse(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     sources: Optional[list[dict]] = None
-    suggested_questions: Optional[list[str]] = None
+    suggested_questions: Optional[list[dict]] = None
     metadata: Optional[dict] = None
 
 
