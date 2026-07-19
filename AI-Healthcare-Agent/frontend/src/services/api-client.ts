@@ -34,8 +34,19 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+const PUBLIC_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register/patient",
+  "/auth/register/doctor",
+  "/auth/refresh",
+];
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const url = config.url || "";
+    const isPublic = PUBLIC_ENDPOINTS.some((prefix) => url.startsWith(prefix));
+    if (isPublic) return config;
+
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
