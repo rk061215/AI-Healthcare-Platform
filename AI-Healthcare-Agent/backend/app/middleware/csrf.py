@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request, Response
@@ -7,6 +8,9 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.types import ASGIApp
 
 from app.core.config import settings
+
+# Must match CORSMiddleware allow_origin_regex in cors.py
+_ALLOWED_ORIGIN_REGEX = re.compile(r"https://.*\.vercel\.app")
 
 
 class CSRFTokenMiddleware(BaseHTTPMiddleware):
@@ -96,4 +100,6 @@ class CSRFTokenMiddleware(BaseHTTPMiddleware):
             return False
         if port is None:
             port = 443 if scheme == "https" else 80
-        return (scheme, host, port) in self._allowed_origins
+        if (scheme, host, port) in self._allowed_origins:
+            return True
+        return bool(_ALLOWED_ORIGIN_REGEX.fullmatch(url))
