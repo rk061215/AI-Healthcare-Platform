@@ -1,4 +1,7 @@
+import traceback
+
 from fastapi import APIRouter, Depends, status
+from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -27,16 +30,26 @@ def register_patient(
     request: PatientRegisterRequest,
     db: Session = Depends(get_db),
 ):
-    service = AuthService(db)
-    return service.register_patient(
-        email=request.email,
-        password=request.password,
-        full_name=request.full_name,
-        phone=request.phone,
-        date_of_birth=request.date_of_birth,
-        gender=request.gender,
-        terms_accepted=request.terms_accepted,
-    )
+    logger.info("TRACE: Entering register_patient endpoint")
+    logger.info(f"TRACE: email={request.email}, full_name={request.full_name}, phone={request.phone}, date_of_birth={request.date_of_birth}, gender={request.gender}, terms_accepted={request.terms_accepted}")
+    try:
+        service = AuthService(db)
+        logger.info("TRACE: AuthService created")
+        result = service.register_patient(
+            email=request.email,
+            password="***REDACTED***",
+            full_name=request.full_name,
+            phone=request.phone,
+            date_of_birth=request.date_of_birth,
+            gender=request.gender,
+            terms_accepted=request.terms_accepted,
+        )
+        logger.info("TRACE: register_patient returned successfully")
+        return result
+    except Exception as e:
+        logger.error(f"TRACE: EXCEPTION in register_patient endpoint: {type(e).__name__}: {e}")
+        logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
+        raise
 
 
 @router.post(
