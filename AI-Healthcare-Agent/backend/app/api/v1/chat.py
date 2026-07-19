@@ -37,7 +37,7 @@ def send_message(
         return ChatResponse(
             reply=result.answer,
             sources=result.citations if hasattr(result, "citations") else None,
-            suggested_questions=[q.model_dump() for q in result.suggested_questions] if hasattr(result, "suggested_questions") and result.suggested_questions else None,
+            suggested_questions=[q.question for q in result.suggested_questions] if hasattr(result, "suggested_questions") and result.suggested_questions else None,
             metadata={
                 "session_id": result.session_id,
                 "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
