@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import time
+from logging import getLogger
 from typing import Any, Optional
+
+logger = getLogger(__name__)
 
 from app.rag.citation_manager import CitationManager
 from app.rag.config import RAGEngineConfig
@@ -107,23 +110,33 @@ class RAGEngine:
             )
 
             # 4. Retrieval + Context Building
-            retrieved, context = self._retrieval_orchestrator.orchestrate(
-                query=rewritten,
-                patient_id=request.patient_id,
-                report_id=request.report_id,
-                document_type=request.document_type,
-                top_k=top_k,
-                min_score=self._config.min_score,
-                context_max_tokens=request.max_tokens or self._config.context_max_tokens,
-                context_strategy=request.context_strategy or self._config.context_strategy,
-                metadata_filter=request.metadata_filter or {},
-            )
-            metrics.retrieval_ms = retrieved.retrieval_time_ms
-            metrics.context_build_ms = context.build_time_ms
-            metrics.num_documents_retrieved = len(retrieved.results)
-            metrics.num_fragments_in_context = context.fragment_count
-            metrics.retrieval_provider = retrieved.provider
-            metrics.truncated = context.total_tokens > 0
+            try:
+                retrieved, context = self._retrieval_orchestrator.orchestrate(
+                    query=rewritten,
+                    patient_id=request.patient_id,
+                    report_id=request.report_id,
+                    document_type=request.document_type,
+                    top_k=top_k,
+                    min_score=self._config.min_score,
+                    context_max_tokens=request.max_tokens or self._config.context_max_tokens,
+                    context_strategy=request.context_strategy or self._config.context_strategy,
+                    metadata_filter=request.metadata_filter or {},
+                )
+                metrics.retrieval_ms = retrieved.retrieval_time_ms
+                metrics.context_build_ms = context.build_time_ms
+                metrics.num_documents_retrieved = len(retrieved.results)
+                metrics.num_fragments_in_context = context.fragment_count
+                metrics.retrieval_provider = retrieved.provider
+                metrics.truncated = context.total_tokens > 0
+            except Exception as exc:
+                logger.warning(f"Retrieval failed, falling back to document_text: {exc}")
+                metrics.retrieval_ms = 0.0
+                metrics.context_build_ms = 0.0
+                metrics.num_documents_retrieved = 0
+                metrics.num_fragments_in_context = 0
+                context = RAGContext(
+                    context="", has_sufficient_context=False, build_time_ms=0.0
+                )
 
             if not context.has_sufficient_context and document_text:
                 snippet = document_text[:1000]
