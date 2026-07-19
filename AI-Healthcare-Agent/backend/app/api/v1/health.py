@@ -36,7 +36,7 @@ def health_check(db: Session = Depends(get_db)):
                 "error": db_health.error,
             }
         },
-    }
+    )
 
 
 @router.get("/details")
