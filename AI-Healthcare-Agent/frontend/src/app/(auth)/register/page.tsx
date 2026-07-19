@@ -158,15 +158,6 @@ export default function RegisterPage() {
       const dashboard = role === "patient" ? "/patient/dashboard" : "/doctor/dashboard";
       router.push(dashboard);
     } catch (error: any) {
-      console.error("=== REGISTRATION ERROR ===", {
-        message: error?.message,
-        responseStatus: error?.response?.status,
-        responseData: JSON.stringify(error?.response?.data),
-        responseHeaders: error?.response?.headers,
-        isAxiosError: error?.isAxiosError,
-        code: error?.code,
-        stack: error?.stack,
-      });
       const message = error?.response?.data?.error || error?.response?.data?.detail || "Registration failed";
       toast.error(message);
     } finally {
