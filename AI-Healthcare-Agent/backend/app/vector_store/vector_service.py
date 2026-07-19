@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
+from loguru import logger
+
 from app.document_pipeline.chunk import DocumentChunk
 from app.embeddings.embedding_service import EmbeddingService
 from app.vector_store.base_vector_store import BaseVectorStore
@@ -55,13 +57,18 @@ class VectorService:
         Each chunk is embedded using the configured embedding service,
         then stored with full metadata.
         """
+        logger.info(f"[PIPELINE AUDIT] === VectorService.index_chunks ENTERED === chunks_count={len(chunks)}")
         if not chunks:
+            logger.info(f"[PIPELINE AUDIT] index_chunks — no chunks, returning empty list")
             return []
 
         texts = [c.text for c in chunks]
+        logger.info(f"[PIPELINE AUDIT] index_chunks — calling embed_batch with {len(texts)} texts, total_chars={sum(len(t) for t in texts)}")
         try:
             vectors, metas = self._embedding_service.embed_batch(texts)
+            logger.info(f"[PIPELINE AUDIT] index_chunks — embed_batch returned {len(vectors)} embeddings, first_vector_length={len(vectors[0]) if vectors else 0}")
         except Exception as exc:
+            logger.error(f"[PIPELINE AUDIT] index_chunks — embed_batch FAILED: {type(exc).__name__}: {exc}")
             raise DocumentOperationError(f"Failed to embed chunks: {exc}") from exc
 
         documents = []
@@ -86,7 +93,11 @@ class VectorService:
             )
             documents.append(doc)
 
-        return self._store.add_documents(documents)
+        logger.info(f"[PIPELINE AUDIT] index_chunks — built {len(documents)} IndexableDocuments, calling store.add_documents()")
+        result_ids = self._store.add_documents(documents)
+        logger.info(f"[PIPELINE AUDIT] index_chunks — store.add_documents returned {len(result_ids)} IDs: {result_ids[:3]}...")
+        logger.info(f"[PIPELINE AUDIT] === VectorService.index_chunks COMPLETE === {len(result_ids)} vectors stored")
+        return result_ids
 
     def index_text(
         self,

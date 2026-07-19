@@ -24,11 +24,16 @@ async def upload_report(
     payload: dict = Depends(get_current_patient),
     db: Session = Depends(get_db),
 ):
+    patient_id = payload.get("sub")
+    logger.info(f"[PIPELINE AUDIT] === UPLOAD ENTERED === patient_id={patient_id}")
+
     ext = Path(file.filename or "").suffix.lower()
     if ext not in ALLOWED_TYPES:
         raise ValidationException(f"File type {ext} not allowed")
 
     content = await file.read()
+    logger.info(f"[PIPELINE AUDIT] Upload — filename={file.filename}, size={len(content)} bytes, ext={ext}")
+
     if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
         raise ValidationException(f"File exceeds {settings.MAX_UPLOAD_SIZE_MB}MB limit")
 
@@ -38,11 +43,15 @@ async def upload_report(
 
     service = ReportService(db)
     report = service.create_report(
-        patient_id=payload["sub"],
+        patient_id=patient_id,
         file_path=str(file_path),
         file_type=ext.lstrip("."),
         title=file.filename,
     )
+    logger.info(f"[PIPELINE AUDIT] Upload — report created: id={report.id}, status={report.status}, file_type={report.file_type}")
+
+    logger.info(f"[PIPELINE AUDIT] Upload — returning status={report.status}. NOTE: OCR processing is NOT auto-scheduled. Frontend must call POST /{{id}}/process separately.")
+
     return {
         "id": str(report.id),
         "title": report.title,
@@ -62,14 +71,23 @@ def process_report_ocr(
     from app.models.report import Report as ReportModel
     from app.services.ocr_service import run_background_ocr
 
+    patient_id = payload.get("sub")
+    logger.info(f"[PIPELINE AUDIT] === PROCESS ENTERED === report_id={report_id}, patient_id={patient_id}")
+
     report = db.query(ReportModel).filter(ReportModel.id == report_id).first()
     if not report:
+        logger.warning(f"[PIPELINE AUDIT] Process — report NOT FOUND: {report_id}")
         raise ValidationException(f"Report {report_id} not found")
+
+    logger.info(f"[PIPELINE AUDIT] Process — report found: id={report_id}, current_status={report.status}, file_type={report.file_type}")
 
     report.status = ReportStatus.PROCESSING
     db.commit()
 
     background_tasks.add_task(run_background_ocr, report_id)
+    logger.info(f"[PIPELINE AUDIT] Process — background_task scheduled for report_id={report_id}")
+
+    logger.info(f"[PIPELINE AUDIT] Process — returning HTTP 200 with status=processing, report_id={report_id}")
 
     return {
         "id": report_id,

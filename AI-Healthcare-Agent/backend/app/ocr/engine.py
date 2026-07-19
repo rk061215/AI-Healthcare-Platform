@@ -40,10 +40,14 @@ class OcrEngine:
         file_type: str,
         retry_count: int = 0,
     ) -> OcrJobResult:
+        from loguru import logger as llog
+
+        llog.info(f"[PIPELINE AUDIT] === OCR ENGINE process_document ENTERED === file_path={file_path}, file_type={file_type}, retry_count={retry_count}")
         start = time.time()
         result = self._execute_with_retry(file_path, file_type, retry_count)
         elapsed = (time.time() - start) * 1000
         result.processing_time_ms = round(elapsed, 2)
+        llog.info(f"[PIPELINE AUDIT] === OCR ENGINE process_document RETURNED === status={result.status}, confidence={result.confidence}, text_length={result.text_length}, provider={result.provider}, processing_time_ms={result.processing_time_ms}")
         return result
 
     def _execute_with_retry(
@@ -59,6 +63,7 @@ class OcrEngine:
         threshold = settings.OCR_MIN_CONFIDENCE
         use_mock = settings.OCR_USE_MOCK
 
+        llog.info(f"[PIPELINE AUDIT] _execute_with_retry — max_attempts={max_attempts}, confidence_threshold={threshold}, primary={self.primary.name if self.primary else None}, fallback={self.fallback.name if self.fallback else None}")
         llog.info(f"[OCR AUDIT] _execute_with_retry — file_type={file_type}, max_attempts={max_attempts}, threshold={threshold}, use_mock={use_mock}")
         llog.info(f"[OCR AUDIT] primary={self.primary.name if self.primary else None}, fallback={self.fallback.name if self.fallback else None}")
 
@@ -67,6 +72,7 @@ class OcrEngine:
             try:
                 provider = self.primary if attempt == 0 else (self.fallback or self.primary)
                 llog.info(f"[OCR AUDIT] Using provider={provider.name}, attempt={attempt}")
+                llog.info(f"[PIPELINE AUDIT] _execute_with_retry attempt {attempt+1}/{max_attempts} — calling _run_ocr with provider={provider.name}")
                 ocr_result, job_result = self._run_ocr(file_path, file_type, provider)
                 job_result.retry_count = initial_retry_count + attempt
                 llog.info(f"[OCR AUDIT] OCR completed — raw_confidence={ocr_result.confidence}, final_confidence={job_result.confidence}, text_length={job_result.text_length}, status={job_result.status}, provider={ocr_result.provider}")
@@ -78,6 +84,7 @@ class OcrEngine:
                 llog.info(f"[OCR AUDIT] Checking confidence: {job_result.confidence} >= {threshold} = {job_result.confidence >= threshold}")
                 if job_result.confidence >= threshold:
                     llog.info(f"[OCR AUDIT] Confidence PASSED — returning result on attempt {attempt + 1}")
+                    llog.info(f"[PIPELINE AUDIT] _execute_with_retry — attempt {attempt+1} SUCCEEDED with confidence={job_result.confidence} >= threshold={threshold}")
                     return job_result
 
                 llog.info(f"[OCR AUDIT] Confidence BELOW threshold — checking fallback")
@@ -121,6 +128,7 @@ class OcrEngine:
                 time_mod.sleep(sleep_time)
 
         llog.warning(f"[OCR AUDIT] All {max_attempts} attempts exhausted — returning 'Max retries exceeded with low confidence'")
+        llog.warning(f"[PIPELINE AUDIT] _execute_with_retry — ALL {max_attempts} ATTEMPTS EXHAUSTED. Returning failed result with error='Max retries exceeded with low confidence'")
         return OcrJobResult(
             report_id=file_path.stem,
             status="failed",

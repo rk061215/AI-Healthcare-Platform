@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+from loguru import logger
+
 from app.document_pipeline.chunk import DocumentChunk
 from app.document_pipeline.cleaner import DefaultDocumentCleaner
 from app.document_pipeline.config import DocumentPipelineConfig
@@ -153,7 +155,10 @@ class DocumentPipeline:
     ) -> list[DocumentChunk]:
         """Run the full pipeline on raw OCR text and return enriched chunks."""
 
+        logger.info(f"[PIPELINE AUDIT] === DocumentPipeline.process ENTERED === report_id={report_id}, raw_text_length={len(raw_text) if raw_text else 0}, patient_id={patient_id}, provider={provider}")
+
         if not raw_text or not raw_text.strip():
+            logger.warning(f"[PIPELINE AUDIT] DocumentPipeline — input text is empty! report_id={report_id}")
             raise MalformedDocumentError("Input text is empty or whitespace only")
 
         document_id = report_id or str(uuid.uuid4())
@@ -162,19 +167,25 @@ class DocumentPipeline:
             cleaned = self._stage_clean(raw_text)
             doc_type = self._stage_classify(cleaned)
             sections_raw = self._stage_detect_sections(cleaned)
+            logger.info(f"[PIPELINE AUDIT] DocumentPipeline — clean done, doc_type={doc_type}, sections_detected={len(sections_raw)}, section_names={list(sections_raw.keys())}")
             sections = self._build_section_objects(sections_raw)
             document = self._build_document(
                 raw_text, cleaned, doc_type, sections,
                 patient_id, report_id, source, language, provider, page_count,
             )
             chunks = self._stage_chunk(document)
+            logger.info(f"[PIPELINE AUDIT] DocumentPipeline — chunker produced {len(chunks)} raw chunks")
             enriched = self._stage_enrich(document, chunks)
+            logger.info(f"[PIPELINE AUDIT] DocumentPipeline — enrichment done, final chunk count={len(enriched)}")
             self._finalize_chunks(enriched, document_id, report_id)
+            logger.info(f"[PIPELINE AUDIT] === DocumentPipeline.process COMPLETE === {len(enriched)} chunks returned")
             return enriched
 
-        except DocumentPipelineError:
+        except DocumentPipelineError as dpe:
+            logger.error(f"[PIPELINE AUDIT] DocumentPipeline — DocumentPipelineError: {dpe}")
             raise
         except Exception as exc:
+            logger.error(f"[PIPELINE AUDIT] DocumentPipeline — UNEXPECTED exception: {type(exc).__name__}: {exc}")
             raise StageExecutionError(f"Pipeline execution failed: {exc}") from exc
 
     def _stage_clean(self, raw_text: str) -> str:
