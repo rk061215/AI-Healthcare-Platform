@@ -13,6 +13,7 @@ from app.rag.exceptions import (
 )
 from app.rag.guardrails import Guardrails
 from app.rag.models import (
+    RAGContext,
     RAGMetrics,
     RAGRequest,
     RAGResponse,
@@ -61,7 +62,7 @@ class RAGEngine:
         self._citation_manager = citation_manager or CitationManager()
         self._guardrails = guardrails or Guardrails()
 
-    def answer(self, request: RAGRequest) -> RAGResponse:
+    def answer(self, request: RAGRequest, document_text: Optional[str] = None) -> RAGResponse:
         """Execute the full RAG pipeline for a single query.
 
         Args:
@@ -123,6 +124,15 @@ class RAGEngine:
             metrics.num_fragments_in_context = context.fragment_count
             metrics.retrieval_provider = retrieved.provider
             metrics.truncated = context.total_tokens > 0
+
+            if not context.has_sufficient_context and document_text:
+                context = RAGContext(
+                    context=document_text,
+                    has_sufficient_context=True,
+                    fragment_count=1,
+                    build_time_ms=0.0,
+                )
+                metrics.num_fragments_in_context = 1
 
             if request.conversation_history:
                 context.conversation_history = request.conversation_history

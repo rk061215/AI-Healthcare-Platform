@@ -63,7 +63,7 @@ class ChatService:
         self._graph: Optional[MedicalQAGraph] = medical_qa_graph
         self._graph_available = medical_qa_graph is not None
 
-    def ask(self, request: ChatRequest, conversation_history: str = "") -> ChatResponse:
+    def ask(self, request: ChatRequest, conversation_history: str = "", document_text: Optional[str] = None) -> ChatResponse:
         overall_start = time.perf_counter()
 
         if not request.query or not request.query.strip():
@@ -82,7 +82,7 @@ class ChatService:
                 raise ChatError(f"Graph execution failed: {exc}") from exc
         else:
             return self._ask_direct(
-                request, session_id, session, is_follow_up, conversation_history, overall_start
+                request, session_id, session, is_follow_up, conversation_history, overall_start, document_text
             )
 
     def _ask_via_graph(
@@ -173,6 +173,7 @@ class ChatService:
         is_follow_up: bool,
         conversation_history: str,
         overall_start: float,
+        document_text: Optional[str] = None,
     ) -> ChatResponse:
         try:
             rag_response = self._rag_engine.answer(
@@ -186,7 +187,8 @@ class ChatService:
                     max_tokens=request.max_tokens or self._config.default_max_tokens,
                     enable_citations=request.enable_citations,
                     conversation_history=conversation_history,
-                )
+                ),
+                document_text=document_text,
             )
         except Exception as exc:
             raise ChatError(f"Failed to process question: {exc}") from exc

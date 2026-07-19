@@ -1,7 +1,11 @@
+from typing import Optional, Tuple
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_patient, get_db
+from app.database.enums import ReportStatus
+from app.models.report import Report
 from app.schemas.chat import ChatMessageRequest, ChatResponse
 from app.services.chat_service import ChatService as DbChatService
 from app.chat.chat_service import ChatService as GraphChatService
@@ -12,6 +16,18 @@ router = APIRouter()
 
 def _get_graph():
     return None
+
+
+def _get_patient_report_text(db: Session, patient_id: str) -> Tuple[Optional[str], Optional[str]]:
+    report = (
+        db.query(Report)
+        .filter(Report.patient_id == patient_id, Report.status == ReportStatus.COMPLETED, Report.ocr_text.isnot(None))
+        .order_by(Report.processed_at.desc())
+        .first()
+    )
+    if report:
+        return str(report.id), report.ocr_text
+    return None, None
 
 
 @router.post("/message", response_model=ChatResponse)
@@ -30,9 +46,13 @@ def send_message(
     try:
         graph = _get_graph()
         graph_chat = GraphChatService(medical_qa_graph=graph)
-        result = graph_chat.ask(
-            ChatMessageRequestToChatRequest(request, payload["sub"])
-        )
+
+        chat_request = ChatMessageRequestToChatRequest(request, payload["sub"])
+        report_id, report_text = _get_patient_report_text(db, payload["sub"])
+        if report_id and not chat_request.report_id:
+            chat_request.report_id = report_id
+
+        result = graph_chat.ask(chat_request, document_text=report_text)
 
         return ChatResponse(
             reply=result.answer,
