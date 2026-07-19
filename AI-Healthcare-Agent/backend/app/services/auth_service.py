@@ -1,8 +1,6 @@
-import traceback
 import uuid
 from datetime import datetime, timezone
 
-from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import (
@@ -18,6 +16,7 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
+from app.core.trace import probe
 from app.models.doctor import Doctor
 from app.models.patient import Patient
 from app.models.refresh_token import RefreshToken
@@ -43,76 +42,71 @@ class AuthService:
         gender: str | None = None,
         terms_accepted: bool = False,
     ) -> dict:
-        try:
-            logger.info("TRACE: register_patient: checking duplicate email")
-            existing = self.patient_repo.get_by_email(email)
-            if existing:
-                logger.warning("TRACE: register_patient: duplicate email found")
-                raise ConflictException("A patient with this email already exists")
-            logger.info("TRACE: register_patient: email is unique")
+        probe("register_patient: checking duplicate email")
+        existing = self.patient_repo.get_by_email(email)
+        if existing:
+            probe("register_patient: duplicate email found")
+            raise ConflictException("A patient with this email already exists")
+        probe("register_patient: email is unique")
 
-            logger.info("TRACE: register_patient: hashing password")
-            hashed = hash_password(password)
-            logger.info("TRACE: register_patient: password hashed successfully")
+        probe("register_patient: hashing password")
+        hashed = hash_password(password)
+        probe("register_patient: password hashed successfully")
 
-            logger.info("TRACE: register_patient: creating Patient model instance")
-            patient = Patient(
-                email=email,
-                password_hash=hashed,
-                full_name=full_name,
-                phone=phone,
-                gender=gender,
-                terms_accepted=terms_accepted,
-                terms_accepted_at=datetime.now(timezone.utc) if terms_accepted else None,
-            )
-            if date_of_birth:
-                from datetime import date
-                patient.date_of_birth = date.fromisoformat(date_of_birth)
-            logger.info("TRACE: register_patient: Patient model created")
+        probe("register_patient: creating Patient model instance")
+        patient = Patient(
+            email=email,
+            password_hash=hashed,
+            full_name=full_name,
+            phone=phone,
+            gender=gender,
+            terms_accepted=terms_accepted,
+            terms_accepted_at=datetime.now(timezone.utc) if terms_accepted else None,
+        )
+        if date_of_birth:
+            from datetime import date
+            patient.date_of_birth = date.fromisoformat(date_of_birth)
+        probe("register_patient: Patient model created")
 
-            logger.info("TRACE: register_patient: db.add(patient)")
-            self.db.add(patient)
+        probe("register_patient: db.add(patient)")
+        self.db.add(patient)
 
-            logger.info("TRACE: register_patient: db.commit()")
-            self.db.commit()
-            logger.info("TRACE: register_patient: db.commit() succeeded")
+        probe("register_patient: db.commit()")
+        self.db.commit()
+        probe("register_patient: db.commit() succeeded")
 
-            logger.info("TRACE: register_patient: db.refresh(patient)")
-            self.db.refresh(patient)
-            logger.info(f"TRACE: register_patient: patient.id={patient.id}")
+        probe("register_patient: db.refresh(patient)")
+        self.db.refresh(patient)
+        probe(f"register_patient: patient.id={patient.id}")
 
-            logger.info("TRACE: register_patient: creating token pair")
-            tokens = create_token_pair(str(patient.id), "patient")
-            logger.info("TRACE: register_patient: token pair created")
+        probe("register_patient: creating token pair")
+        tokens = create_token_pair(str(patient.id), "patient")
+        probe("register_patient: token pair created")
 
-            logger.info("TRACE: register_patient: storing refresh token")
-            self._store_refresh_token(
-                jti=tokens["refresh_jti"],
-                token_hash=hash_token(tokens["refresh_token"]),
-                user_id=str(patient.id),
-                role="patient",
-                expires_at=tokens["refresh_expires_at"],
-            )
-            logger.info("TRACE: register_patient: refresh token stored")
+        probe("register_patient: storing refresh token")
+        self._store_refresh_token(
+            jti=tokens["refresh_jti"],
+            token_hash=hash_token(tokens["refresh_token"]),
+            user_id=str(patient.id),
+            role="patient",
+            expires_at=tokens["refresh_expires_at"],
+        )
+        probe("register_patient: refresh token stored")
 
-            result = {
-                "access_token": tokens["access_token"],
-                "refresh_token": tokens["refresh_token"],
-                "expires_in": tokens["expires_in"],
-                "user": {
-                    "id": str(patient.id),
-                    "email": patient.email,
-                    "full_name": patient.full_name,
-                    "role": "patient",
-                    "phone": patient.phone,
-                },
-            }
-            logger.info("TRACE: register_patient: returning response successfully")
-            return result
-        except Exception as e:
-            logger.error(f"TRACE: EXCEPTION in register_patient: {type(e).__name__}: {e}")
-            logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
-            raise
+        result = {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "expires_in": tokens["expires_in"],
+            "user": {
+                "id": str(patient.id),
+                "email": patient.email,
+                "full_name": patient.full_name,
+                "role": "patient",
+                "phone": patient.phone,
+            },
+        }
+        probe("register_patient: returning response successfully")
+        return result
 
     def register_doctor(
         self,
