@@ -1,6 +1,6 @@
 import traceback
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from loguru import logger
 from sqlalchemy.orm import Session
 
@@ -17,6 +17,14 @@ from app.schemas.auth import (
 )
 from app.services.auth_service import AuthService
 
+_TRACE_STEPS: list[str] = []
+
+
+def _probe(msg: str) -> None:
+    _TRACE_STEPS.append(msg)
+    logger.info(f"TRACE: {msg}")
+
+
 router = APIRouter()
 
 
@@ -29,12 +37,15 @@ router = APIRouter()
 def register_patient(
     request: PatientRegisterRequest,
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
-    logger.info("TRACE: Entering register_patient endpoint")
-    logger.info(f"TRACE: email={request.email}, full_name={request.full_name}, phone={request.phone}, date_of_birth={request.date_of_birth}, gender={request.gender}, terms_accepted={request.terms_accepted}")
+    _TRACE_STEPS.clear()
+
+    _probe("Entering register_patient endpoint")
+    _probe(f"email={request.email}, full_name={request.full_name}, phone={request.phone}, date_of_birth={request.date_of_birth}, gender={request.gender}, terms_accepted={request.terms_accepted}")
     try:
         service = AuthService(db)
-        logger.info("TRACE: AuthService created")
+        _probe("AuthService created")
         result = service.register_patient(
             email=request.email,
             password="***REDACTED***",
@@ -44,12 +55,19 @@ def register_patient(
             gender=request.gender,
             terms_accepted=request.terms_accepted,
         )
-        logger.info("TRACE: register_patient returned successfully")
+        _probe("register_patient returned successfully")
         return result
     except Exception as e:
+        _probe(f"EXCEPTION: {type(e).__name__}: {e}")
+        _probe(f"Traceback:\n{traceback.format_exc()}")
         logger.error(f"TRACE: EXCEPTION in register_patient endpoint: {type(e).__name__}: {e}")
         logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
         raise
+    finally:
+        if response is not None:
+            response.headers["X-Trace-Count"] = str(len(_TRACE_STEPS))
+            for i, step in enumerate(_TRACE_STEPS):
+                response.headers[f"X-Trace-{i+1}"] = step
 
 
 @router.post(
