@@ -126,10 +126,25 @@ class RAGEngine:
             metrics.truncated = context.total_tokens > 0
 
             if not context.has_sufficient_context and document_text:
+                snippet = document_text[:1000]
+                fallback_chunk_id = f"doc_text_{request.report_id or 'unknown'}"
                 context = RAGContext(
                     context=document_text,
                     has_sufficient_context=True,
                     fragment_count=1,
+                    fragments=[{
+                        "text": snippet,
+                        "score": 1.0,
+                        "citation": {"chunk_id": fallback_chunk_id, "document_id": request.report_id or "", "source": "ocr"},
+                        "rank": 1,
+                    }],
+                    citations=[{
+                        "chunk_id": fallback_chunk_id,
+                        "document_id": request.report_id or "",
+                        "report_id": request.report_id,
+                        "source": "ocr",
+                        "score": 1.0,
+                    }],
                     build_time_ms=0.0,
                 )
                 metrics.num_fragments_in_context = 1
