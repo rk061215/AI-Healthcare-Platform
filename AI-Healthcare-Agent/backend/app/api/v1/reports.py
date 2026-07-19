@@ -1,7 +1,9 @@
+import time
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
+from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_patient, get_db
@@ -52,25 +54,28 @@ async def upload_report(
 @router.post("/{report_id}/process")
 def process_report_ocr(
     report_id: str,
+    background_tasks: BackgroundTasks,
     payload: dict = Depends(get_current_patient),
     db: Session = Depends(get_db),
 ):
-    service = OcrService(db)
-    try:
-        result = service.process_report(report_id)
-        return {
-            "id": report_id,
-            "status": result.status,
-            "provider": result.provider,
-            "confidence": result.confidence,
-            "pages_processed": result.pages_processed,
-        }
-    except Exception as exc:
-        return {
-            "id": report_id,
-            "status": "failed",
-            "error": str(exc),
-        }
+    from app.database.enums import ReportStatus
+    from app.models.report import Report as ReportModel
+    from app.services.ocr_service import run_background_ocr
+
+    report = db.query(ReportModel).filter(ReportModel.id == report_id).first()
+    if not report:
+        raise ValidationException(f"Report {report_id} not found")
+
+    report.status = ReportStatus.PROCESSING
+    db.commit()
+
+    background_tasks.add_task(run_background_ocr, report_id)
+
+    return {
+        "id": report_id,
+        "status": "processing",
+        "message": "Report processing started in background",
+    }
 
 
 @router.post("/{report_id}/retry")

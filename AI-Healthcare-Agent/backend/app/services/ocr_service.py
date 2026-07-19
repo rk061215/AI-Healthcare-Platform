@@ -1,4 +1,5 @@
 import hashlib
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,38 @@ from app.ocr.engine import OcrEngine
 from app.ocr.schemas import OcrJobResult
 from app.repositories.report_repository import ReportRepository
 from app.vector_store.vector_service import VectorService
+
+
+def run_background_ocr(report_id: str) -> None:
+    from app.database.session import SessionLocal
+
+    logger.info(f"[BG OCR] Starting background processing for report {report_id}")
+    t0 = time.time()
+    db = SessionLocal()
+    try:
+        service = OcrService(db)
+        result = service.process_report(report_id)
+        elapsed = time.time() - t0
+        logger.info(
+            f"[BG OCR] Report {report_id} finished: status={result.status}, "
+            f"confidence={result.confidence}, pages={result.pages_processed}, "
+            f"duration={elapsed:.1f}s"
+        )
+    except Exception as exc:
+        elapsed = time.time() - t0
+        logger.error(f"[BG OCR] Report {report_id} failed after {elapsed:.1f}s: {exc}")
+        try:
+            import uuid
+            report = db.query(Report).filter(Report.id == uuid.UUID(report_id)).first()
+            if report and str(report.status) == "processing":
+                report.status = ReportStatus.FAILED
+                report.error_message = str(exc)[:500]
+                report.processed_at = datetime.now(timezone.utc)
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 class OcrService:

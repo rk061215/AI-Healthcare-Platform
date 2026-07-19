@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_redoc_html
@@ -63,6 +64,24 @@ async def lifespan(app: FastAPI):
         logger.warning(
             f"LangGraph runtime started with {len(bootstrap_result.validation_errors)} issues"
         )
+
+    logger.info("Resetting reports stuck in PROCESSING state...")
+    try:
+        from app.database.enums import ReportStatus
+        from app.database.session import SessionLocal
+        from app.models.report import Report
+        db_session = SessionLocal()
+        stuck = db_session.query(Report).filter(Report.status == ReportStatus.PROCESSING.value).all()
+        for r in stuck:
+            r.status = ReportStatus.FAILED.value
+            r.error_message = "Server restarted during processing — report was in incomplete state"
+            r.processed_at = datetime.now(timezone.utc)
+        db_session.commit()
+        if stuck:
+            logger.warning(f"Reset {len(stuck)} reports from PROCESSING to FAILED")
+        db_session.close()
+    except Exception as exc:
+        logger.warning(f"Failed to reset PROCESSING reports: {exc}")
 
     logger.info("Running vector index recovery...")
     try:
