@@ -157,12 +157,15 @@ class TesseractEngine(BaseOCR):
         )
 
     def _mock_process(self, image: Image.Image, language: str = "en") -> OcrResult:
+        from loguru import logger as llog
         from app.ocr.engines.future.google_vision import GoogleVisionEngine
 
         gv = GoogleVisionEngine(self.config)
         base = gv._mock_process(image, language)
+        gv_conf = base.confidence
         base.provider = "tesseract_mock"
         base.confidence = round(base.confidence * 0.85, 4)
+        llog.info(f"[OCR AUDIT MOCK] GoogleVision mock returned confidence={gv_conf}, after *0.85={base.confidence}, text_len={len(base.full_text)}, first_200={base.full_text[:200]!r}")
         return base
 
 

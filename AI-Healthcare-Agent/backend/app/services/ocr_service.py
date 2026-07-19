@@ -59,12 +59,15 @@ class OcrService:
         self.engine = OcrEngine(use_mock=settings.OCR_USE_MOCK)
 
     def process_report(self, report_id: str) -> OcrJobResult:
+        logger.info(f"[OCR AUDIT] process_report start — report_id={report_id}")
         report = self.repo.get(uuid.UUID(report_id))
         if not report:
             raise NotFoundException("Report", report_id)
 
         if not settings.OCR_ENABLED:
             raise ValidationException("OCR processing is disabled")
+
+        logger.info(f"[OCR AUDIT] Report fetched — file_path={report.file_path}, file_type={report.file_type}, status={report.status}, retry_count={report.retry_count}")
 
         report.status = ReportStatus.PROCESSING
         report.retry_count = (report.retry_count or 0) + 1
@@ -76,11 +79,13 @@ class OcrService:
                 raise FileNotFoundError(f"Report file not found: {report.file_path}")
 
             file_type = report.file_type or "pdf"
+            logger.info(f"[OCR AUDIT] Calling engine.process_document — file_path={file_path}, file_type={file_type}, retry_count={report.retry_count - 1}")
             result = self.engine.process_document(
                 file_path=file_path,
                 file_type=file_type,
                 retry_count=report.retry_count - 1,
             )
+            logger.info(f"[OCR AUDIT] engine.process_document returned — status={result.status}, confidence={result.confidence}, provider={result.provider}, text_length={result.text_length}, error_message={result.error_message!r}")
 
             saved_result = self._save_ocr_result(report, result)
 

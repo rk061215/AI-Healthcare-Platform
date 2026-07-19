@@ -52,30 +52,58 @@ class OcrEngine:
         file_type: str,
         initial_retry_count: int = 0,
     ) -> OcrJobResult:
+        from loguru import logger as llog
+
         max_attempts = settings.OCR_RETRY_MAX_ATTEMPTS
         backoff = settings.OCR_RETRY_BACKOFF_SECONDS
+        threshold = settings.OCR_MIN_CONFIDENCE
+        use_mock = settings.OCR_USE_MOCK
+
+        llog.info(f"[OCR AUDIT] _execute_with_retry — file_type={file_type}, max_attempts={max_attempts}, threshold={threshold}, use_mock={use_mock}")
+        llog.info(f"[OCR AUDIT] primary={self.primary.name if self.primary else None}, fallback={self.fallback.name if self.fallback else None}")
 
         for attempt in range(max_attempts):
+            llog.info(f"[OCR AUDIT] === Attempt {attempt + 1}/{max_attempts} ===")
             try:
                 provider = self.primary if attempt == 0 else (self.fallback or self.primary)
+                llog.info(f"[OCR AUDIT] Using provider={provider.name}, attempt={attempt}")
                 ocr_result, job_result = self._run_ocr(file_path, file_type, provider)
                 job_result.retry_count = initial_retry_count + attempt
+                llog.info(f"[OCR AUDIT] OCR completed — raw_confidence={ocr_result.confidence}, final_confidence={job_result.confidence}, text_length={job_result.text_length}, status={job_result.status}, provider={ocr_result.provider}")
+                if job_result.full_text:
+                    llog.info(f"[OCR AUDIT] Extracted text first 500 chars: {job_result.full_text[:500]!r}")
+                else:
+                    llog.warning(f"[OCR AUDIT] Extracted text is EMPTY")
 
-                if job_result.confidence >= settings.OCR_MIN_CONFIDENCE:
+                llog.info(f"[OCR AUDIT] Checking confidence: {job_result.confidence} >= {threshold} = {job_result.confidence >= threshold}")
+                if job_result.confidence >= threshold:
+                    llog.info(f"[OCR AUDIT] Confidence PASSED — returning result on attempt {attempt + 1}")
                     return job_result
 
+                llog.info(f"[OCR AUDIT] Confidence BELOW threshold — checking fallback")
                 if self.fallback and provider is not self.fallback:
+                    llog.info(f"[OCR AUDIT] Trying fallback provider={self.fallback.name}")
                     fb_ocr, fb_job = self._run_ocr(file_path, file_type, self.fallback)
                     fb_job.retry_count = initial_retry_count + attempt + 1
+                    llog.info(f"[OCR AUDIT] Fallback result — confidence={fb_job.confidence}, text_length={fb_job.text_length}")
                     if fb_job.confidence > job_result.confidence:
+                        llog.info(f"[OCR AUDIT] Fallback confidence BETTER ({fb_job.confidence} > {job_result.confidence}) — returning fallback result")
                         return fb_job
+                    else:
+                        llog.info(f"[OCR AUDIT] Fallback confidence NOT better ({fb_job.confidence} <= {job_result.confidence})")
+                else:
+                    llog.info(f"[OCR AUDIT] No fallback available (primary={self.primary.name if self.primary else None}, fallback={self.fallback.name if self.fallback else None})")
 
                 if attempt < max_attempts - 1:
+                    sleep_time = backoff * (2 ** attempt)
+                    llog.info(f"[OCR AUDIT] Retrying in {sleep_time}s (attempt {attempt + 1}/{max_attempts})")
                     import time as time_mod
-                    time_mod.sleep(backoff * (2 ** attempt))
+                    time_mod.sleep(sleep_time)
 
             except Exception as e:
+                llog.error(f"[OCR AUDIT] Attempt {attempt + 1} threw exception: {type(e).__name__}: {e}")
                 if attempt >= max_attempts - 1:
+                    llog.warning(f"[OCR AUDIT] Last attempt failed — returning failed result with exception")
                     return OcrJobResult(
                         report_id=file_path.stem,
                         status="failed",
@@ -87,9 +115,12 @@ class OcrEngine:
                         retry_count=initial_retry_count + attempt,
                         error_message=str(e),
                     )
+                sleep_time = backoff * (2 ** attempt)
+                llog.info(f"[OCR AUDIT] Exception not fatal — retrying in {sleep_time}s")
                 import time as time_mod
-                time_mod.sleep(backoff * (2 ** attempt))
+                time_mod.sleep(sleep_time)
 
+        llog.warning(f"[OCR AUDIT] All {max_attempts} attempts exhausted — returning 'Max retries exceeded with low confidence'")
         return OcrJobResult(
             report_id=file_path.stem,
             status="failed",
