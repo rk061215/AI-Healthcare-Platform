@@ -16,7 +16,6 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
-from app.core.trace import probe
 from app.models.doctor import Doctor
 from app.models.patient import Patient
 from app.models.refresh_token import RefreshToken
@@ -42,21 +41,13 @@ class AuthService:
         gender: str | None = None,
         terms_accepted: bool = False,
     ) -> dict:
-        probe("register_patient: checking duplicate email")
         existing = self.patient_repo.get_by_email(email)
         if existing:
-            probe("register_patient: duplicate email found")
             raise ConflictException("A patient with this email already exists")
-        probe("register_patient: email is unique")
 
-        probe("register_patient: hashing password")
-        hashed = hash_password(password)
-        probe("register_patient: password hashed successfully")
-
-        probe("register_patient: creating Patient model instance")
         patient = Patient(
             email=email,
-            password_hash=hashed,
+            password_hash=hash_password(password),
             full_name=full_name,
             phone=phone,
             gender=gender,
@@ -66,24 +57,12 @@ class AuthService:
         if date_of_birth:
             from datetime import date
             patient.date_of_birth = date.fromisoformat(date_of_birth)
-        probe("register_patient: Patient model created")
 
-        probe("register_patient: db.add(patient)")
         self.db.add(patient)
-
-        probe("register_patient: db.commit()")
         self.db.commit()
-        probe("register_patient: db.commit() succeeded")
-
-        probe("register_patient: db.refresh(patient)")
         self.db.refresh(patient)
-        probe(f"register_patient: patient.id={patient.id}")
 
-        probe("register_patient: creating token pair")
         tokens = create_token_pair(str(patient.id), "patient")
-        probe("register_patient: token pair created")
-
-        probe("register_patient: storing refresh token")
         self._store_refresh_token(
             jti=tokens["refresh_jti"],
             token_hash=hash_token(tokens["refresh_token"]),
@@ -91,9 +70,8 @@ class AuthService:
             role="patient",
             expires_at=tokens["refresh_expires_at"],
         )
-        probe("register_patient: refresh token stored")
 
-        result = {
+        return {
             "access_token": tokens["access_token"],
             "refresh_token": tokens["refresh_token"],
             "expires_in": tokens["expires_in"],
@@ -105,8 +83,6 @@ class AuthService:
                 "phone": patient.phone,
             },
         }
-        probe("register_patient: returning response successfully")
-        return result
 
     def register_doctor(
         self,
@@ -119,21 +95,13 @@ class AuthService:
         specialization: str | None = None,
         years_of_experience: int | None = None,
     ) -> dict:
-        probe("register_doctor: checking duplicate email")
         existing = self.doctor_repo.get_by_email(email)
         if existing:
-            probe("register_doctor: duplicate email found")
             raise ConflictException("A doctor with this email already exists")
-        probe("register_doctor: email is unique")
 
-        probe("register_doctor: hashing password")
-        hashed = hash_password(password)
-        probe("register_doctor: password hashed successfully")
-
-        probe("register_doctor: creating Doctor model instance")
         doctor = Doctor(
             email=email,
-            password_hash=hashed,
+            password_hash=hash_password(password),
             full_name=full_name,
             phone=phone,
             license_number=license_number,
@@ -141,24 +109,11 @@ class AuthService:
             specialization=specialization,
             years_of_experience=years_of_experience,
         )
-        probe("register_doctor: Doctor model created")
-
-        probe("register_doctor: db.add(doctor)")
         self.db.add(doctor)
-
-        probe("register_doctor: db.commit()")
         self.db.commit()
-        probe("register_doctor: db.commit() succeeded")
-
-        probe("register_doctor: db.refresh(doctor)")
         self.db.refresh(doctor)
-        probe(f"register_doctor: doctor.id={doctor.id}")
 
-        probe("register_doctor: creating token pair")
         tokens = create_token_pair(str(doctor.id), "doctor")
-        probe("register_doctor: token pair created")
-
-        probe("register_doctor: storing refresh token")
         self._store_refresh_token(
             jti=tokens["refresh_jti"],
             token_hash=hash_token(tokens["refresh_token"]),
@@ -166,9 +121,8 @@ class AuthService:
             role="doctor",
             expires_at=tokens["refresh_expires_at"],
         )
-        probe("register_doctor: refresh token stored")
 
-        result = {
+        return {
             "access_token": tokens["access_token"],
             "refresh_token": tokens["refresh_token"],
             "expires_in": tokens["expires_in"],
@@ -184,33 +138,21 @@ class AuthService:
                 "years_of_experience": doctor.years_of_experience,
             },
         }
-        probe("register_doctor: returning response successfully")
-        return result
 
     def login(self, email: str, password: str, role: str, remember_me: bool = False) -> dict:
-        probe(f"login: looking up {role} by email")
         user = None
         if role == "patient":
             user = self.patient_repo.get_by_email(email)
         elif role == "doctor":
             user = self.doctor_repo.get_by_email(email)
 
-        probe("login: verifying password")
         if not user or not verify_password(password, user.password_hash):
-            probe("login: invalid email or password")
             raise UnauthorizedException("Invalid email or password")
-        probe("login: password verified")
 
         if not user.is_active:
-            probe("login: account deactivated")
             raise UnauthorizedException("Account is deactivated. Contact support.")
-        probe("login: account is active")
 
-        probe("login: creating token pair")
         tokens = create_token_pair(str(user.id), role, remember_me)
-        probe("login: token pair created")
-
-        probe("login: storing refresh token")
         self._store_refresh_token(
             jti=tokens["refresh_jti"],
             token_hash=hash_token(tokens["refresh_token"]),
@@ -218,16 +160,13 @@ class AuthService:
             role=role,
             expires_at=tokens["refresh_expires_at"],
         )
-        probe("login: refresh token stored")
 
-        result = {
+        return {
             "access_token": tokens["access_token"],
             "refresh_token": tokens["refresh_token"],
             "expires_in": tokens["expires_in"],
             "user": self._build_user_response(user, role),
         }
-        probe("login: returning response successfully")
-        return result
 
     def logout(self, refresh_token: str) -> None:
         try:
@@ -249,52 +188,33 @@ class AuthService:
         self.refresh_token_repo.revoke_token(jti)
 
     def refresh(self, refresh_token: str) -> dict:
-        probe("refresh: decoding token")
         try:
             payload = decode_token(refresh_token)
-        except ValueError as e:
-            probe(f"refresh: decode failed - {e}")
+        except ValueError:
             raise UnauthorizedException("Invalid or expired refresh token")
-        probe("refresh: token decoded")
 
         if payload.get("type") != "refresh":
-            probe("refresh: invalid token type")
             raise UnauthorizedException("Invalid token type")
-        probe("refresh: token type is refresh")
 
         jti = payload.get("jti")
         user_id = payload.get("sub")
         role = payload.get("role")
 
-        probe(f"refresh: looking up jti={jti}")
         stored = self.refresh_token_repo.get_by_jti(jti)
         if not stored:
-            probe("refresh: token not found")
             raise UnauthorizedException("Refresh token not found")
-        probe("refresh: token found")
 
         if stored.is_revoked:
-            probe("refresh: token already revoked")
             raise UnauthorizedException("Refresh token has been revoked")
-        probe("refresh: token not revoked")
 
-        probe("refresh: verifying hash")
         token_hash = hash_token(refresh_token)
         if stored.token_hash != token_hash:
-            probe("refresh: hash mismatch - revoking")
             self.refresh_token_repo.revoke_token(jti)
             raise UnauthorizedException("Refresh token mismatch")
-        probe("refresh: hash verified")
 
-        probe("refresh: revoking old token")
         self.refresh_token_repo.revoke_token(jti)
-        probe("refresh: old token revoked")
 
-        probe("refresh: creating new token pair")
         tokens = create_token_pair(user_id, role)
-        probe("refresh: new token pair created")
-
-        probe("refresh: storing new refresh token")
         self._store_refresh_token(
             jti=tokens["refresh_jti"],
             token_hash=hash_token(tokens["refresh_token"]),
@@ -302,15 +222,12 @@ class AuthService:
             role=role,
             expires_at=tokens["refresh_expires_at"],
         )
-        probe("refresh: new refresh token stored")
 
-        result = {
+        return {
             "access_token": tokens["access_token"],
             "refresh_token": tokens["refresh_token"],
             "expires_in": tokens["expires_in"],
         }
-        probe("refresh: returning response successfully")
-        return result
 
     def get_current_user(self, user_id: str, role: str) -> dict:
         user = None

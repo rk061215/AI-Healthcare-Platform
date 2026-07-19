@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from app.core.health import DatabaseHealthChecker, HealthResult
 from app.database.session import get_db
 
-_DEPLOY_MARKER = "trace-v1"
-
 router = APIRouter()
 
 
@@ -24,12 +22,9 @@ def health_check(db: Session = Depends(get_db)):
     if db_health.status == "down":
         overall = "degraded"
 
-    return {
-        "status": overall,
-        "deploy_marker": _DEPLOY_MARKER,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": "1.0.0",
-        "services": {
+    return HealthResult(
+        status=overall,
+        services={
             "database": {
                 "status": db_health.status,
                 "latency_ms": db_health.latency_ms,

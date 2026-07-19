@@ -1,11 +1,7 @@
-import traceback
-
-from fastapi import APIRouter, Depends, Response, status
-from loguru import logger
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.core.trace import clear as trace_clear, get_count, get_steps, probe
 from app.schemas.auth import (
     AuthResponse,
     DoctorRegisterRequest,
@@ -30,39 +26,17 @@ router = APIRouter()
 def register_patient(
     request: PatientRegisterRequest,
     db: Session = Depends(get_db),
-    response: Response = None,
 ):
-    trace_clear()
-
-    probe("Entering register_patient endpoint")
-    probe(f"email={request.email}, full_name={request.full_name}, phone={request.phone}, date_of_birth={request.date_of_birth}, gender={request.gender}, terms_accepted={request.terms_accepted}")
-    try:
-        service = AuthService(db)
-        probe("AuthService created")
-        probe("password=***REDACTED***")
-        result = service.register_patient(
-            email=request.email,
-            password=request.password,
-            full_name=request.full_name,
-            phone=request.phone,
-            date_of_birth=request.date_of_birth,
-            gender=request.gender,
-            terms_accepted=request.terms_accepted,
-        )
-        probe("register_patient returned successfully")
-        return result
-    except Exception as e:
-        probe(f"EXCEPTION: {type(e).__name__}: {e}")
-        probe(f"Traceback:\n{traceback.format_exc()}")
-        logger.error(f"TRACE: EXCEPTION in register_patient endpoint: {type(e).__name__}: {e}")
-        logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
-        raise
-    finally:
-        if response is not None:
-            steps = get_steps()
-            response.headers["X-Trace-Count"] = str(len(steps))
-            for i, step in enumerate(steps):
-                response.headers[f"X-Trace-{i+1}"] = step
+    service = AuthService(db)
+    return service.register_patient(
+        email=request.email,
+        password=request.password,
+        full_name=request.full_name,
+        phone=request.phone,
+        date_of_birth=request.date_of_birth,
+        gender=request.gender,
+        terms_accepted=request.terms_accepted,
+    )
 
 
 @router.post(
@@ -74,39 +48,18 @@ def register_patient(
 def register_doctor(
     request: DoctorRegisterRequest,
     db: Session = Depends(get_db),
-    response: Response = None,
 ):
-    trace_clear()
-    probe("Entering register_doctor endpoint")
-    probe(f"email={request.email}, full_name={request.full_name}, phone={request.phone}, license_number={request.license_number}, hospital_name={request.hospital_name}, specialization={request.specialization}, years_of_experience={request.years_of_experience}")
-    try:
-        service = AuthService(db)
-        probe("AuthService created")
-        probe("password=***REDACTED***")
-        result = service.register_doctor(
-            email=request.email,
-            password=request.password,
-            full_name=request.full_name,
-            phone=request.phone,
-            license_number=request.license_number,
-            hospital_name=request.hospital_name,
-            specialization=request.specialization,
-            years_of_experience=request.years_of_experience,
-        )
-        probe("register_doctor returned successfully")
-        return result
-    except Exception as e:
-        probe(f"EXCEPTION: {type(e).__name__}: {e}")
-        probe(f"Traceback:\n{traceback.format_exc()}")
-        logger.error(f"TRACE: EXCEPTION in register_doctor endpoint: {type(e).__name__}: {e}")
-        logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
-        raise
-    finally:
-        if response is not None:
-            steps = get_steps()
-            response.headers["X-Trace-Count"] = str(len(steps))
-            for i, step in enumerate(steps):
-                response.headers[f"X-Trace-{i+1}"] = step
+    service = AuthService(db)
+    return service.register_doctor(
+        email=request.email,
+        password=request.password,
+        full_name=request.full_name,
+        phone=request.phone,
+        license_number=request.license_number,
+        hospital_name=request.hospital_name,
+        specialization=request.specialization,
+        years_of_experience=request.years_of_experience,
+    )
 
 
 @router.post(
@@ -117,35 +70,14 @@ def register_doctor(
 def login(
     request: LoginRequest,
     db: Session = Depends(get_db),
-    response: Response = None,
 ):
-    trace_clear()
-    probe("Entering login endpoint")
-    probe(f"email={request.email}, role={request.role}, remember_me={request.remember_me}")
-    try:
-        service = AuthService(db)
-        probe("AuthService created")
-        probe("password=***REDACTED***")
-        result = service.login(
-            email=request.email,
-            password=request.password,
-            role=request.role,
-            remember_me=request.remember_me,
-        )
-        probe("login returned successfully")
-        return result
-    except Exception as e:
-        probe(f"EXCEPTION: {type(e).__name__}: {e}")
-        probe(f"Traceback:\n{traceback.format_exc()}")
-        logger.error(f"TRACE: EXCEPTION in login endpoint: {type(e).__name__}: {e}")
-        logger.error(f"TRACE: Traceback:\n{traceback.format_exc()}")
-        raise
-    finally:
-        if response is not None:
-            steps = get_steps()
-            response.headers["X-Trace-Count"] = str(len(steps))
-            for i, step in enumerate(steps):
-                response.headers[f"X-Trace-{i+1}"] = step
+    service = AuthService(db)
+    return service.login(
+        email=request.email,
+        password=request.password,
+        role=request.role,
+        remember_me=request.remember_me,
+    )
 
 
 @router.post(
