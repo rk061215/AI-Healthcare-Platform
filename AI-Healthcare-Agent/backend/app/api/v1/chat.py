@@ -27,23 +27,31 @@ def send_message(
         message=request.message,
     )
 
-    graph = _get_graph()
-    graph_chat = GraphChatService(medical_qa_graph=graph)
-    result = graph_chat.ask(
-        ChatMessageRequestToChatRequest(request, payload["sub"])
-    )
+    try:
+        graph = _get_graph()
+        graph_chat = GraphChatService(medical_qa_graph=graph)
+        result = graph_chat.ask(
+            ChatMessageRequestToChatRequest(request, payload["sub"])
+        )
 
-    return ChatResponse(
-        reply=result.answer,
-        sources=result.citations if hasattr(result, "citations") else None,
-        suggested_questions=result.suggested_questions if hasattr(result, "suggested_questions") else None,
-        metadata={
-            "session_id": result.session_id,
-            "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
-            "query_type": result.query_type if hasattr(result, "query_type") else "unknown",
-            "processing_time_ms": result.processing_time_ms if hasattr(result, "processing_time_ms") else 0.0,
-        },
-    )
+        return ChatResponse(
+            reply=result.answer,
+            sources=result.citations if hasattr(result, "citations") else None,
+            suggested_questions=result.suggested_questions if hasattr(result, "suggested_questions") else None,
+            metadata={
+                "session_id": result.session_id,
+                "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
+                "query_type": result.query_type if hasattr(result, "query_type") else "unknown",
+                "processing_time_ms": result.processing_time_ms if hasattr(result, "processing_time_ms") else 0.0,
+            },
+        )
+    except Exception as exc:
+        return ChatResponse(
+            reply=f"AI service is not available. Please verify the GEMINI_API_KEY is set correctly on the server. Details: {exc}",
+            metadata={
+                "error": str(exc),
+            },
+        )
 
 
 @router.get("/history")

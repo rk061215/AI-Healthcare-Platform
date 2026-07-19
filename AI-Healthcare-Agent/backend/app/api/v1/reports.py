@@ -56,8 +56,21 @@ def process_report_ocr(
     db: Session = Depends(get_db),
 ):
     service = OcrService(db)
-    result = service.process_report(report_id)
-    return result
+    try:
+        result = service.process_report(report_id)
+        return {
+            "id": report_id,
+            "status": result.status,
+            "provider": result.provider,
+            "confidence": result.confidence,
+            "pages_processed": result.pages_processed,
+        }
+    except Exception as exc:
+        return {
+            "id": report_id,
+            "status": "failed",
+            "error": str(exc),
+        }
 
 
 @router.post("/{report_id}/retry")
