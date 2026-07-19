@@ -36,6 +36,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.PROJECT_NAME} v1.0.0")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
+    logger.info(f"Resolved CORS origins: {settings.cors_origins}")
 
     setup_sentry(app)
     setup_langsmith()
