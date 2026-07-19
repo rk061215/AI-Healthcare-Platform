@@ -128,6 +128,18 @@ class Settings(BaseSettings):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    # Vector Store
+    CHROMA_PERSIST_DIR: str = ""
+    CHROMA_COLLECTION_NAME: str = "document_chunks"
+
+    @property
+    def chroma_persist_dir(self) -> str:
+        if self.CHROMA_PERSIST_DIR:
+            return self.CHROMA_PERSIST_DIR
+        if self._is_container():
+            return "/tmp/chromadb_data"
+        return "./chromadb_data"
+
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_PROVIDER: str = "in_memory"

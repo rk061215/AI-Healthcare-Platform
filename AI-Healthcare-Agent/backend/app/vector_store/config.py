@@ -9,8 +9,8 @@ from app.core.config import settings
 @dataclass
 class VectorStoreConfig:
     provider: str = ""
-    collection_name: str = "document_chunks"
-    persist_directory: str = "./chromadb_data"
+    collection_name: str = ""
+    persist_directory: str = ""
     host: str = "localhost"
     port: int = 8001
     distance_function: str = "cosine"
@@ -21,5 +21,7 @@ class VectorStoreConfig:
     def __post_init__(self) -> None:
         if not self.provider:
             self.provider = "chromadb"
-        if not self.collection_name and hasattr(settings, "CHROMA_COLLECTION_NAME"):
+        if not self.collection_name:
             self.collection_name = settings.CHROMA_COLLECTION_NAME
+        if not self.persist_directory:
+            self.persist_directory = settings.chroma_persist_dir
