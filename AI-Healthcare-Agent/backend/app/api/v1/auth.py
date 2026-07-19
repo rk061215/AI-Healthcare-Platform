@@ -39,9 +39,10 @@ def register_patient(
     try:
         service = AuthService(db)
         probe("AuthService created")
+        probe("password=***REDACTED***")
         result = service.register_patient(
             email=request.email,
-            password="***REDACTED***",
+            password=request.password,
             full_name=request.full_name,
             phone=request.phone,
             date_of_birth=request.date_of_birth,
@@ -81,9 +82,10 @@ def register_doctor(
     try:
         service = AuthService(db)
         probe("AuthService created")
+        probe("password=***REDACTED***")
         result = service.register_doctor(
             email=request.email,
-            password="***REDACTED***",
+            password=request.password,
             full_name=request.full_name,
             phone=request.phone,
             license_number=request.license_number,
@@ -123,9 +125,10 @@ def login(
     try:
         service = AuthService(db)
         probe("AuthService created")
+        probe("password=***REDACTED***")
         result = service.login(
             email=request.email,
-            password="***REDACTED***",
+            password=request.password,
             role=request.role,
             remember_me=request.remember_me,
         )
