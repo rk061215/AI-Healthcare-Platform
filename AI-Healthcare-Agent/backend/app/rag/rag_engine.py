@@ -233,19 +233,6 @@ class RAGEngine:
                 requires_human_review=metrics.guardrails_triggered,
             )
 
-            timing = {
-                "query_proc": round(metrics.query_processing_ms, 2),
-                "query_class": round(metrics.query_classification_ms, 2),
-                "retrieval": round(metrics.retrieval_ms, 2),
-                "context_build": round(metrics.context_build_ms, 2),
-                "guardrail_pre": round(metrics.guardrail_pre_ms, 2),
-                "generation": round(metrics.generation_ms, 2),
-                "guardrail_post": round(metrics.guardrail_post_ms, 2),
-                "citations": round(metrics.citation_ms, 2),
-                "num_docs": metrics.num_documents_retrieved,
-                "num_frags": metrics.num_fragments_in_context,
-            }
-
             return RAGResponse(
                 answer=final_answer,
                 citations=citation_block,
@@ -253,7 +240,7 @@ class RAGEngine:
                 query_type=classification.query_type,
                 guardrail_result=guardrail_result,
                 processing_time_ms=round(metrics.total_duration_ms, 2),
-                timing_breakdown=timing,
+                timing_breakdown=self._snapshot_timing(metrics),
                 model=self._config.model,
                 provider=self._config.provider,
             )
@@ -266,6 +253,7 @@ class RAGEngine:
                 answer=f"I couldn't process your question: {exc}",
                 query=request.query,
                 processing_time_ms=round(metrics.total_duration_ms, 2),
+                timing_breakdown=self._snapshot_timing(metrics),
                 model=self._config.model,
                 provider=self._config.provider,
             )
@@ -277,9 +265,24 @@ class RAGEngine:
                 answer=f"I encountered an error processing your request: {exc}",
                 query=request.query,
                 processing_time_ms=round(metrics.total_duration_ms, 2),
+                timing_breakdown=self._snapshot_timing(metrics),
                 model=self._config.model,
                 provider=self._config.provider,
             )
+
+    def _snapshot_timing(self, metrics: RAGMetrics) -> dict[str, float]:
+        return {
+            "query_proc": round(metrics.query_processing_ms, 2),
+            "query_class": round(metrics.query_classification_ms, 2),
+            "retrieval": round(metrics.retrieval_ms, 2),
+            "context_build": round(metrics.context_build_ms, 2),
+            "guardrail_pre": round(metrics.guardrail_pre_ms, 2),
+            "generation": round(metrics.generation_ms, 2),
+            "guardrail_post": round(metrics.guardrail_post_ms, 2),
+            "citations": round(metrics.citation_ms, 2),
+            "num_docs": metrics.num_documents_retrieved,
+            "num_frags": metrics.num_fragments_in_context,
+        }
 
     def _build_guardrail_failure(
         self,
@@ -300,6 +303,7 @@ class RAGEngine:
             query=request.query,
             guardrail_result=pre_result,
             processing_time_ms=round(metrics.total_duration_ms, 2),
+            timing_breakdown=self._snapshot_timing(metrics),
             model=self._config.model,
             provider=self._config.provider,
         )
