@@ -21,14 +21,21 @@ from app.retrieval.providers.vector_retriever import (
     VECTOR_RETRIEVER_PROVIDER_NAME,
     VectorRetriever,
 )
-from app.retrieval.providers.future.hybrid_retriever import (
+from app.retrieval.providers.hybrid_retriever import (
     HYBRID_RETRIEVER_PROVIDER_NAME,
     HybridRetriever,
 )
-from app.retrieval.providers.future.keyword_retriever import (
+from app.retrieval.providers.keyword_retriever import (
     KEYWORD_RETRIEVER_PROVIDER_NAME,
     KeywordRetriever,
 )
+from app.retrieval.providers.multi_query_retriever import (
+    MULTI_QUERY_RETRIEVER_PROVIDER_NAME,
+    MultiQueryRetriever,
+)
+from app.retrieval.context_compressor import ContextCompressor
+from app.retrieval.fusion import reciprocal_rank_fusion
+from app.retrieval.reranking import Reranker
 from app.retrieval.retriever_registry import RetrieverRegistry
 from app.retrieval.retriever_factory import RetrieverFactory
 from app.retrieval.retriever_service import RetrieverService
@@ -36,6 +43,7 @@ from app.retrieval.retriever_service import RetrieverService
 RetrieverRegistry.register(VECTOR_RETRIEVER_PROVIDER_NAME, VectorRetriever)
 RetrieverRegistry.register(HYBRID_RETRIEVER_PROVIDER_NAME, HybridRetriever)
 RetrieverRegistry.register(KEYWORD_RETRIEVER_PROVIDER_NAME, KeywordRetriever)
+RetrieverRegistry.register(MULTI_QUERY_RETRIEVER_PROVIDER_NAME, MultiQueryRetriever)
 
 __all__ = [
     "BaseRetriever",
@@ -59,7 +67,12 @@ __all__ = [
     "HybridRetriever",
     "KEYWORD_RETRIEVER_PROVIDER_NAME",
     "KeywordRetriever",
+    "MULTI_QUERY_RETRIEVER_PROVIDER_NAME",
+    "MultiQueryRetriever",
     "RetrieverRegistry",
     "RetrieverFactory",
     "RetrieverService",
+    "Reranker",
+    "ContextCompressor",
+    "reciprocal_rank_fusion",
 ]

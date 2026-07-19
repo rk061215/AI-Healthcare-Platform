@@ -20,6 +20,7 @@ from app.tools.tool_executor import ToolExecutor
 from app.tools.tool_factory import ToolFactory
 from app.tools.tool_registry import ToolRegistry, get_global_registry
 from app.tools.tool_result import ToolResult
+from app.tools.llm_tool_selector import LLMToolSelector
 from app.tools.tool_selector import ToolSelector
 from app.tools.tool_service import ToolService
 from app.tools.tools import (
@@ -69,6 +70,7 @@ __all__ = [
     "ToolConfigError",
     "ToolServiceError",
     "ToolSelectorError",
+    "LLMToolSelector",
     "AppointmentTool",
     "PatientTool",
     "DoctorTool",

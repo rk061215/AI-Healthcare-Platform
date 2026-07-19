@@ -14,6 +14,8 @@ from app.agents.agent_response import AgentResponse
 from app.agents.agent_service import AgentService
 from app.agents.agent_state import AgentPhase, AgentState, ComponentTrace, ExecutionStatus
 from app.agents.agents.medical_qa_agent import MedicalQAAgent
+from app.agents.agents.planner_agent import PlannerAgent
+from app.agents.agents.reflection_agent import ReflectionAgent
 from app.agents.base_agent import BaseAgent
 from app.agents.config import AgentConfig
 from app.agents.exceptions import (
@@ -32,10 +34,13 @@ from app.agents.exceptions import (
     AgentToolError,
     AgentValidationError,
 )
+from app.agents.execution_engine import ExecutionEngine
 from app.agents.orchestrator import AgentOrchestrator
 
 _registry = get_global_registry()
 _registry.register("medical_qa", MedicalQAAgent)
+_registry.register("planner", PlannerAgent)
+_registry.register("reflection", ReflectionAgent)
 
 __all__ = [
     "BaseAgent",
@@ -52,6 +57,9 @@ __all__ = [
     "AgentExecutor",
     "AgentService",
     "MedicalQAAgent",
+    "PlannerAgent",
+    "ReflectionAgent",
+    "ExecutionEngine",
     "AgentOrchestrator",
     "AgentError",
     "AgentNotFoundError",

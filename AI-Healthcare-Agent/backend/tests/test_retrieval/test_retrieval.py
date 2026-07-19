@@ -592,25 +592,25 @@ class TestFutureRetrievers:
     def test_keyword_registered(self):
         assert KEYWORD_RETRIEVER_PROVIDER_NAME in RetrieverRegistry.list_providers()
 
-    def test_hybrid_not_implemented(self):
+    def test_hybrid_constructable(self):
         config = RetrieverConfig(provider=HYBRID_RETRIEVER_PROVIDER_NAME)
         retriever = RetrieverRegistry.get(HYBRID_RETRIEVER_PROVIDER_NAME)(config=config)
-        with pytest.raises(NotImplementedError):
-            retriever.initialize()
+        assert retriever is not None
+        assert retriever.health_check()["status"] == "error"
 
-    def test_keyword_not_implemented(self):
+    def test_keyword_constructable(self):
         config = RetrieverConfig(provider=KEYWORD_RETRIEVER_PROVIDER_NAME)
         retriever = RetrieverRegistry.get(KEYWORD_RETRIEVER_PROVIDER_NAME)(config=config)
-        with pytest.raises(NotImplementedError):
-            retriever.initialize()
+        assert retriever is not None
+        assert retriever.health_check()["status"] == "error"
 
-    def test_hybrid_health_error(self):
+    def test_hybrid_health_uninitialized(self):
         config = RetrieverConfig(provider=HYBRID_RETRIEVER_PROVIDER_NAME)
         retriever = RetrieverRegistry.get(HYBRID_RETRIEVER_PROVIDER_NAME)(config=config)
         health = retriever.health_check()
         assert health["status"] == "error"
 
-    def test_keyword_health_error(self):
+    def test_keyword_health_uninitialized(self):
         config = RetrieverConfig(provider=KEYWORD_RETRIEVER_PROVIDER_NAME)
         retriever = RetrieverRegistry.get(KEYWORD_RETRIEVER_PROVIDER_NAME)(config=config)
         health = retriever.health_check()

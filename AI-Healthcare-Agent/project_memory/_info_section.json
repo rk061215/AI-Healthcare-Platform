@@ -1,0 +1,8 @@
+{
+  "info": {
+    "title": "AI Healthcare Assistant API",
+    "description": "AI-powered healthcare follow-up assistant for post-discharge patient monitoring",
+    "version": "1.0.0"
+  },
+  "tags": []
+}

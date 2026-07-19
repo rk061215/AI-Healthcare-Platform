@@ -9,8 +9,10 @@ Every stage is independently replaceable via dependency injection.
 No Conversation Memory, no LangGraph, no Chat UI.
 """
 
+from app.rag.citation_engine import CitationAnalysis, CitationEngine, CitationGroup, CitationScore
 from app.rag.citation_manager import CitationManager
 from app.rag.config import RAGEngineConfig
+from app.rag.confidence_engine import ClaimConfidence, ConfidenceBreakdown, ConfidenceEngine, ConfidenceResult
 from app.rag.exceptions import (
     CitationError,
     ConfigurationError,
@@ -54,6 +56,14 @@ __all__ = [
     "RetrievalOrchestrator",
     "ResponseGenerator",
     "CitationManager",
+    "CitationEngine",
+    "CitationAnalysis",
+    "CitationScore",
+    "CitationGroup",
+    "ConfidenceEngine",
+    "ConfidenceResult",
+    "ConfidenceBreakdown",
+    "ClaimConfidence",
     "Guardrails",
     "RAGError",
     "ConfigurationError",
