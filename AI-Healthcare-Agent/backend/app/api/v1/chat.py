@@ -18,16 +18,17 @@ def _get_graph():
     return None
 
 
-def _get_patient_report_text(db: Session, patient_id: str) -> Tuple[Optional[str], Optional[str]]:
-    report = (
-        db.query(Report)
-        .filter(Report.patient_id == patient_id, Report.status == ReportStatus.COMPLETED, Report.ocr_text.isnot(None))
-        .order_by(Report.processed_at.desc())
-        .first()
-    )
-    if report:
-        return str(report.id), report.ocr_text
-    return None, None
+def _get_patient_report_text(db: Session, patient_id: str) -> Tuple[Optional[str], Optional[str], dict]:
+    all_reports = db.query(Report).filter(Report.patient_id == patient_id).order_by(Report.uploaded_at.desc()).all()
+    diag = {
+        "total_reports": len(all_reports),
+        "statuses": [str(r.status) for r in all_reports],
+        "has_ocr": [bool(r.ocr_text) for r in all_reports],
+    }
+    for r in all_reports:
+        if r.ocr_text:
+            return str(r.id), r.ocr_text, diag
+    return None, None, diag
 
 
 @router.post("/message", response_model=ChatResponse)
@@ -48,7 +49,7 @@ def send_message(
         graph_chat = GraphChatService(medical_qa_graph=graph)
 
         chat_request = ChatMessageRequestToChatRequest(request, payload["sub"])
-        report_id, report_text = _get_patient_report_text(db, payload["sub"])
+        report_id, report_text, report_diag = _get_patient_report_text(db, payload["sub"])
         if report_id and not chat_request.report_id:
             chat_request.report_id = report_id
 
@@ -63,6 +64,8 @@ def send_message(
                 "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
                 "query_type": result.query_type if hasattr(result, "query_type") else "unknown",
                 "processing_time_ms": result.processing_time_ms if hasattr(result, "processing_time_ms") else 0.0,
+                "report_diag": report_diag,
+                "has_doc_text": bool(report_text),
             },
         )
     except Exception as exc:
