@@ -1,3 +1,4 @@
+from app.ocr import engines
 from app.ocr.base_ocr import BaseOCR
 from app.ocr.engine import OcrEngine
 from app.ocr.ocr_factory import OCRFactory

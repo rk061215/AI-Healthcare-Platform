@@ -8,6 +8,7 @@ Architecture:
     ReEmbeddingService (ABC) — interface for version management
 """
 
+from app.embeddings import providers
 from app.embeddings.base_embedding import BaseEmbedding
 from app.embeddings.config import EmbeddingConfig
 from app.embeddings.embedding_factory import EmbeddingFactory
