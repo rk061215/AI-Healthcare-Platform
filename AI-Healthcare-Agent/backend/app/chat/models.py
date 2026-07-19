@@ -101,6 +101,7 @@ class ChatResponse(BaseModel):
     session_id: str = ""
     query_type: str = "unknown"
     is_follow_up: bool = False
+    timing_breakdown: dict[str, Any] = Field(default_factory=dict)
     processing_time_ms: float = 0.0
     schema_version: str = CHAT_SCHEMA_VERSION
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -225,6 +225,7 @@ class ChatService:
             suggested_questions=formatted["suggested_questions"],
             session_id=session_id,
             query_type=rag_response.query_type,
+            timing_breakdown=getattr(rag_response, 'timing_breakdown', {}),
             is_follow_up=is_follow_up,
             processing_time_ms=total_ms,
         )

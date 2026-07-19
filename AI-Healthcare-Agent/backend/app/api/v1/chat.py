@@ -64,6 +64,7 @@ def send_message(
                 "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
                 "query_type": result.query_type if hasattr(result, "query_type") else "unknown",
                 "processing_time_ms": result.processing_time_ms if hasattr(result, "processing_time_ms") else 0.0,
+                "timing_breakdown": result.timing_breakdown if hasattr(result, "timing_breakdown") else None,
                 "report_diag": report_diag,
                 "has_doc_text": bool(report_text),
             },

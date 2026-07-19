@@ -96,6 +96,7 @@ class RAGResponse(BaseModel):
     query_type: str = "unknown"
     guardrail_result: GuardrailResult = Field(default_factory=GuardrailResult)
     processing_time_ms: float = 0.0
+    timing_breakdown: dict[str, float] = Field(default_factory=dict)
     model: str = ""
     provider: str = ""
     schema_version: str = RAG_SCHEMA_VERSION

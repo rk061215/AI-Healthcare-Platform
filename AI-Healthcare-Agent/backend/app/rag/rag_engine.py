@@ -233,6 +233,19 @@ class RAGEngine:
                 requires_human_review=metrics.guardrails_triggered,
             )
 
+            timing = {
+                "query_proc": round(metrics.query_processing_ms, 2),
+                "query_class": round(metrics.query_classification_ms, 2),
+                "retrieval": round(metrics.retrieval_ms, 2),
+                "context_build": round(metrics.context_build_ms, 2),
+                "guardrail_pre": round(metrics.guardrail_pre_ms, 2),
+                "generation": round(metrics.generation_ms, 2),
+                "guardrail_post": round(metrics.guardrail_post_ms, 2),
+                "citations": round(metrics.citation_ms, 2),
+                "num_docs": metrics.num_documents_retrieved,
+                "num_frags": metrics.num_fragments_in_context,
+            }
+
             return RAGResponse(
                 answer=final_answer,
                 citations=citation_block,
@@ -240,6 +253,7 @@ class RAGEngine:
                 query_type=classification.query_type,
                 guardrail_result=guardrail_result,
                 processing_time_ms=round(metrics.total_duration_ms, 2),
+                timing_breakdown=timing,
                 model=self._config.model,
                 provider=self._config.provider,
             )
