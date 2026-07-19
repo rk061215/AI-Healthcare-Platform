@@ -5,25 +5,13 @@ from app.api.deps import get_current_patient, get_db
 from app.schemas.chat import ChatMessageRequest, ChatResponse
 from app.services.chat_service import ChatService as DbChatService
 from app.chat.chat_service import ChatService as GraphChatService
-from app.langgraph.graph_registry import get_global_registry
-from app.langgraph.graphs.medical_qa_graph import MedicalQAGraph
+
 
 router = APIRouter()
 
-_graph_instance: MedicalQAGraph | None = None
 
-
-def _get_graph() -> MedicalQAGraph | None:
-    global _graph_instance
-    if _graph_instance is None:
-        try:
-            registry = get_global_registry()
-            graph_cls = registry.get("medical_qa")
-            _graph_instance = graph_cls()
-            _graph_instance.initialize()
-        except Exception:
-            _graph_instance = None
-    return _graph_instance
+def _get_graph():
+    return None
 
 
 @router.post("/message", response_model=ChatResponse)
@@ -48,12 +36,12 @@ def send_message(
     return ChatResponse(
         reply=result.answer,
         sources=result.citations if hasattr(result, "citations") else None,
+        suggested_questions=result.suggested_questions if hasattr(result, "suggested_questions") else None,
         metadata={
             "session_id": result.session_id,
             "confidence": result.confidence.overall if hasattr(result, "confidence") else 0.0,
             "query_type": result.query_type if hasattr(result, "query_type") else "unknown",
             "processing_time_ms": result.processing_time_ms if hasattr(result, "processing_time_ms") else 0.0,
-            "graph_executed": graph is not None,
         },
     )
 

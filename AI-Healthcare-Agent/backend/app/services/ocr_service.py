@@ -1,17 +1,22 @@
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.exceptions import NotFoundException, ValidationException
-from app.database.enums import ReportStatus
+from app.database.enums import IndexStatus, ReportStatus
+from app.document_pipeline.pipeline import DocumentPipeline
 from app.models.report import Report
+from app.models.vector_index_state import VectorIndexState
 from app.ocr.engine import OcrEngine
 from app.ocr.schemas import OcrJobResult
 from app.repositories.report_repository import ReportRepository
+from app.vector_store.vector_service import VectorService
 
 
 class OcrService:
@@ -44,7 +49,15 @@ class OcrService:
                 retry_count=report.retry_count - 1,
             )
 
-            return self._save_ocr_result(report, result)
+            saved_result = self._save_ocr_result(report, result)
+
+            if result.status == "completed" and report.ocr_text:
+                try:
+                    self._index_report(report)
+                except Exception as exc:
+                    logger.warning(f"Report {report_id} OCR succeeded but indexing failed: {exc}")
+
+            return saved_result
 
         except Exception as e:
             report.status = ReportStatus.FAILED
@@ -53,6 +66,53 @@ class OcrService:
             self.db.commit()
             self.db.refresh(report)
             raise
+
+    def _index_report(self, report: Report) -> None:
+        pipeline = DocumentPipeline()
+        vector_service = VectorService()
+
+        chunks = pipeline.process(
+            raw_text=report.ocr_text,
+            patient_id=str(report.patient_id),
+            report_id=str(report.id),
+            source="ocr",
+            language="en",
+            provider=report.ocr_provider or "unknown",
+        )
+
+        if not chunks:
+            logger.warning(f"Report {report.id} produced zero chunks — skipping vector index")
+            return
+
+        vector_service.index_chunks(chunks)
+
+        chunk_text = " ".join(c.text for c in chunks)
+        checksum = hashlib.sha256(chunk_text.encode("utf-8")).hexdigest()
+
+        existing = (
+            self.db.query(VectorIndexState)
+            .filter(VectorIndexState.report_id == report.id)
+            .first()
+        )
+
+        if existing:
+            existing.chunk_count = len(chunks)
+            existing.index_status = IndexStatus.INDEXED.value
+            existing.index_checksum = checksum
+            existing.last_indexed_at = datetime.now(timezone.utc)
+        else:
+            entry = VectorIndexState(
+                report_id=report.id,
+                patient_id=report.patient_id,
+                chunk_count=len(chunks),
+                index_status=IndexStatus.INDEXED.value,
+                index_checksum=checksum,
+                last_indexed_at=datetime.now(timezone.utc),
+            )
+            self.db.add(entry)
+
+        self.db.commit()
+        logger.info(f"Report {report.id}: {len(chunks)} chunks indexed to vector store")
 
     def process_pending_reports(self, limit: int = 10) -> list[OcrJobResult]:
         pending = self.repo.get_pending_reports()

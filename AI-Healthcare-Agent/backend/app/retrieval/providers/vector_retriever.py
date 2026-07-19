@@ -106,6 +106,7 @@ class VectorRetriever(BaseRetriever):
             search_results = self._vector_service.search(
                 query=query.text,
                 k=query.top_k,
+                filter=SearchFilter(**filter_dict) if filter_dict else None,
             )
         except Exception as exc:
             raise SearchExecutionError(f"Retrieval failed: {exc}") from exc
