@@ -1,3 +1,4 @@
+import subprocess
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -39,6 +40,14 @@ async def lifespan(app: FastAPI):
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info(f"Resolved CORS origins: {settings.cors_origins}")
     logger.info("CORS origin regex: https://.*\\.vercel\\.app")
+
+    try:
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
+        ).stdout.strip()
+        logger.info(f"Deployed commit: {sha}")
+    except Exception:
+        logger.info("Deployed commit: unknown (git not available)")
 
     setup_sentry(app)
     setup_langsmith()
