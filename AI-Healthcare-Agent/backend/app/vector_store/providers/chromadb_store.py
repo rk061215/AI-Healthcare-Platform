@@ -201,7 +201,7 @@ class ChromaDBStore(BaseVectorStore):
             result.append(
                 CollectionInfo(
                     name=c.name,
-                    dimension=self._config.batch_size,
+                    dimension=0,
                     count=count,
                     distance_function=self._config.distance_function,
                     metadata=c.metadata or {},

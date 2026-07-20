@@ -74,7 +74,12 @@ def process_report_ocr(
     patient_id = payload.get("sub")
     logger.info(f"[PIPELINE AUDIT] === PROCESS ENTERED === report_id={report_id}, patient_id={patient_id}")
 
-    report = db.query(ReportModel).filter(ReportModel.id == report_id).first()
+    try:
+        report_uuid = uuid.UUID(report_id)
+    except ValueError:
+        raise ValidationException(f"Invalid report ID format: {report_id}")
+
+    report = db.query(ReportModel).filter(ReportModel.id == report_uuid).first()
     if not report:
         logger.warning(f"[PIPELINE AUDIT] Process — report NOT FOUND: {report_id}")
         raise ValidationException(f"Report {report_id} not found")

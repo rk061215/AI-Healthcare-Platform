@@ -10,6 +10,12 @@ from app.embeddings.exceptions import (
     ProviderNotFoundError,
 )
 
+# Ensure embedding provider implementations are imported so they
+# self-register with EmbeddingRegistry (e.g. GeminiEmbedding at
+# gemini_embedding.py:111).  Direct imports of embedding_service.py
+# bypass app/embeddings/__init__.py, so we need the explicit import here.
+from app.embeddings import providers as _embedding_providers  # noqa: F401
+
 
 class EmbeddingFactory:
     """Configuration-driven factory for embedding providers.

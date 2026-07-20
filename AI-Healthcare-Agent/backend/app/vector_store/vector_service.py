@@ -85,7 +85,7 @@ class VectorService:
                 chunk_index=chunk.metadata.chunk_index,
                 document_version=chunk.metadata.chunk_version,
                 schema_version=chunk.metadata.schema_version,
-                embedding_version=chunk.metadata.embedding_version or metas[i].embedding_version,
+                embedding_version=chunk.metadata.embedding_version or str(metas[i].embedding_version),
                 source=chunk.metadata.source,
                 language=chunk.metadata.language,
                 provider=chunk.metadata.provider,

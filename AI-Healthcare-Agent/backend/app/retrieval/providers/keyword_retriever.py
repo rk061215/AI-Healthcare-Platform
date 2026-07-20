@@ -112,8 +112,9 @@ class KeywordRetriever(BaseRetriever):
 
             filter_dict = self._build_metadata_filter(query)
 
+            emb_dim = self._vector_service.embedding_service.provider.dimension()
             candidate_results = self._vector_service.store.similarity_search(
-                [0.0] * 768,
+                [0.0] * emb_dim,
                 k=query.top_k * 3,
                 filter=filter_dict,
             )

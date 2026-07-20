@@ -82,6 +82,12 @@ class GeminiEmbedding(BaseEmbedding):
 
     def dimension(self) -> int:
         dimensions = {
+            "models/gemini-embedding-001": 3072,
+            "models/gemini-embedding-2-preview": 3072,
+            "models/gemini-embedding-2": 3072,
+            "gemini-embedding-001": 3072,
+            "gemini-embedding-2-preview": 3072,
+            "gemini-embedding-2": 3072,
             "text-embedding-004": 768,
             "text-embedding-005": 768,
             "text-embedding-001": 768,
@@ -90,7 +96,7 @@ class GeminiEmbedding(BaseEmbedding):
             "text-embedding-gecko": 768,
             "text-embedding-gecko-multilingual": 768,
         }
-        return dimensions.get(self._model, 768)
+        return dimensions.get(self._model, 3072)
 
     def model_name(self) -> str:
         return self._model

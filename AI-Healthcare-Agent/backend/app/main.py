@@ -1,4 +1,5 @@
 import subprocess
+import time as _time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -33,14 +34,31 @@ from app.middleware.tracing import TracingMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _startup_t0 = _time.perf_counter()
+    _timings = {}
+
     setup_loguru_logging()
     setup_stdlib_logging()
+
+    import os
+    import platform as _platform
+    from datetime import datetime, timezone as _tz
+
+    logger.info("=" * 58)
+    logger.info(f"BUILD {os.environ.get('RENDER_GIT_COMMIT', 'local-dev')}")
+    logger.info(f"STARTUP {datetime.now(_tz.utc).isoformat()}")
+    logger.info(f"PLATFORM {_platform.platform()}")
+    logger.info(f"PYTHON {_platform.python_version()}")
+    logger.info(f"PID {os.getpid()}")
+    logger.info("=" * 58)
+
     logger.info(f"Starting {settings.PROJECT_NAME} v1.0.0")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info(f"Resolved CORS origins: {settings.cors_origins}")
     logger.info("CORS origin regex: https://.*\\.vercel\\.app")
 
+    _t = _time.perf_counter()
     try:
         sha = subprocess.run(
             ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
@@ -48,10 +66,17 @@ async def lifespan(app: FastAPI):
         logger.info(f"Deployed commit: {sha}")
     except Exception:
         logger.info("Deployed commit: unknown (git not available)")
+    _timings["git_commit"] = _time.perf_counter() - _t
 
+    _t = _time.perf_counter()
     setup_sentry(app)
-    setup_langsmith()
+    _timings["sentry"] = _time.perf_counter() - _t
 
+    _t = _time.perf_counter()
+    setup_langsmith()
+    _timings["langsmith"] = _time.perf_counter() - _t
+
+    _t = _time.perf_counter()
     logger.info("Checking OCR subsystem...")
     import shutil
     if shutil.which("tesseract"):
@@ -63,7 +88,9 @@ async def lifespan(app: FastAPI):
             logger.warning("OCR: tesseract binary found but version check failed")
     else:
         logger.warning("OCR: tesseract not found — document processing may fail")
+    _timings["ocr_check"] = _time.perf_counter() - _t
 
+    _t = _time.perf_counter()
     logger.info("Bootstrapping LangGraph runtime...")
     bootstrap_result = GraphBootstrap.run_full_bootstrap()
     set_bootstrap_result(bootstrap_result)
@@ -73,7 +100,9 @@ async def lifespan(app: FastAPI):
         logger.warning(
             f"LangGraph runtime started with {len(bootstrap_result.validation_errors)} issues"
         )
+    _timings["langgraph"] = _time.perf_counter() - _t
 
+    _t = _time.perf_counter()
     logger.info("Resetting reports stuck in PROCESSING state...")
     try:
         from app.database.enums import ReportStatus
@@ -91,7 +120,9 @@ async def lifespan(app: FastAPI):
         db_session.close()
     except Exception as exc:
         logger.warning(f"Failed to reset PROCESSING reports: {exc}")
+    _timings["db_reset"] = _time.perf_counter() - _t
 
+    _t = _time.perf_counter()
     logger.info("Running vector index recovery...")
     try:
         recovery_mgr = RecoveryManager()
@@ -102,6 +133,27 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning(f"Vector index recovery failed: {exc}")
         app.state.vector_health = None
+    _timings["vector_recovery"] = _time.perf_counter() - _t
+
+    logger.info("=" * 58)
+    logger.info("EMBEDDING DIAGNOSTICS")
+    logger.info(f"EMBEDDING_PROVIDER={settings.EMBEDDING_PROVIDER!r}")
+    logger.info(f"EMBEDDING_MODEL={settings.EMBEDDING_MODEL!r}")
+    logger.info(f"GEMINI_API_KEY_EXISTS={bool(settings.GEMINI_API_KEY)}")
+    logger.info(f"GEMINI_API_KEY_LENGTH={len(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else 0}")
+    logger.info(f"GEMINI_API_KEY_FIRST4={settings.GEMINI_API_KEY[:4] if settings.GEMINI_API_KEY else '(none)'}")
+    logger.info(f"CHROMA_HOST={settings.CHROMA_HOST!r}")
+    logger.info(f"CHROMA_PORT={settings.CHROMA_PORT!r}")
+    logger.info(f"CHROMA_COLLECTION_NAME={settings.CHROMA_COLLECTION_NAME!r}")
+    logger.info("=" * 58)
+
+    _total = _time.perf_counter() - _startup_t0
+    logger.info("=" * 58)
+    logger.info("STARTUP TIMELINE")
+    for name, secs in sorted(_timings.items(), key=lambda x: -x[1]):
+        logger.info(f"  {name:25s} {secs:.3f}s")
+    logger.info(f"  {'TOTAL':25s} {_total:.3f}s")
+    logger.info("=" * 58)
 
     yield
 
@@ -115,6 +167,8 @@ async def lifespan(app: FastAPI):
 
     logger.info("Shutting down application")
 
+
+logger.info(f"[STARTUP TIMING] Module imports completed at T+{_time.perf_counter():.3f}s")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -139,6 +193,7 @@ def overridden_redoc():
     )
 
 
+_t0_init = _time.perf_counter()
 setup_cors(app)
 setup_error_handlers(app)
 
@@ -160,7 +215,9 @@ app.include_router(ready_router)
 app.include_router(live_router)
 app.include_router(metrics_router)
 
+_t_otel = _time.perf_counter()
 setup_opentelemetry(app)
+logger.info(f"[STARTUP TIMING] Middleware+routers+otel T+{_time.perf_counter() - _t0_init:.3f}s (otel={_time.perf_counter() - _t_otel:.3f}s)")
 
 
 class HealthResponse(BaseModel):

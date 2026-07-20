@@ -17,6 +17,7 @@ from app.models.vector_index_state import VectorIndexState
 from app.ocr.engine import OcrEngine
 from app.ocr.schemas import OcrJobResult
 from app.repositories.report_repository import ReportRepository
+from app.vector_recovery.config import get_embedding_model_key
 from app.vector_store.vector_service import VectorService
 
 
@@ -107,8 +108,17 @@ class OcrService:
                 logger.info(f"[PIPELINE AUDIT] process_report — OCR completed, proceeding to indexing (text_length={len(report.ocr_text)})")
                 try:
                     self._index_report(report)
+                    report.status = ReportStatus.COMPLETED
+                    self.db.commit()
+                    logger.info(f"[PIPELINE AUDIT] process_report — Indexing succeeded, report COMPLETED")
                 except Exception as exc:
-                    logger.warning(f"[PIPELINE AUDIT] process_report — Indexing failed but OCR succeeded: {exc}")
+                    logger.warning(f"[PIPELINE AUDIT] process_report — Indexing FAILED, setting report to FAILED: {exc}")
+                    report.status = ReportStatus.FAILED
+                    report.error_message = f"Indexing failed: {exc}"
+                    self.db.commit()
+            elif result.status == "completed":
+                report.status = ReportStatus.COMPLETED
+                self.db.commit()
 
             logger.info(f"[PIPELINE AUDIT] === OCR SERVICE process_report COMPLETE === report_id={report_id}, final_status={report.status}, ocr_confidence={report.ocr_confidence}")
 
@@ -127,6 +137,8 @@ class OcrService:
         logger.info(f"[PIPELINE AUDIT] === INDEXING STARTED === report_id={report.id}, ocr_text_length={len(report.ocr_text) if report.ocr_text else 0}")
         pipeline = DocumentPipeline()
         vector_service = VectorService()
+        model_key = get_embedding_model_key(vector_service.embedding_service)
+        logger.info(f"[PIPELINE AUDIT] _index_report — embedding_model_key={model_key}")
 
         logger.info(f"[PIPELINE AUDIT] _index_report — calling DocumentPipeline.process()")
         chunks = pipeline.process(
@@ -163,11 +175,14 @@ class OcrService:
             existing.index_status = IndexStatus.INDEXED.value
             existing.index_checksum = checksum
             existing.last_indexed_at = datetime.now(timezone.utc)
+            if not existing.embedding_model_version:
+                existing.embedding_model_version = model_key
             logger.info(f"[PIPELINE AUDIT] _index_report — updated existing VectorIndexState: report_id={report.id}, chunk_count={len(chunks)}")
         else:
             entry = VectorIndexState(
                 report_id=report.id,
                 patient_id=report.patient_id,
+                embedding_model_version=model_key,
                 chunk_count=len(chunks),
                 index_status=IndexStatus.INDEXED.value,
                 index_checksum=checksum,
@@ -210,10 +225,11 @@ class OcrService:
         return self.process_report(report_id)
 
     def _save_ocr_result(self, report: Report, result: OcrJobResult) -> OcrJobResult:
-        processing_duration = (datetime.now(timezone.utc) - report.uploaded_at).total_seconds() if report.uploaded_at else 0
+        uploaded_at = report.uploaded_at.replace(tzinfo=timezone.utc) if report.uploaded_at else None
+        processing_duration = (datetime.now(timezone.utc) - uploaded_at).total_seconds() if uploaded_at else 0
 
         if result.status == "completed":
-            report.status = ReportStatus.COMPLETED
+            pass
         else:
             report.status = ReportStatus.FAILED
 
@@ -235,6 +251,6 @@ class OcrService:
         self.db.commit()
         self.db.refresh(report)
 
-        logger.info(f"[PIPELINE AUDIT] === REPORT COMPLETION === report_id={report.id}, final_status={report.status}, ocr_confidence={report.ocr_confidence}, ocr_provider={report.ocr_provider}, ocr_pages={report.ocr_pages}, processing_duration={processing_duration:.1f}s, ocr_text_length={len(report.ocr_text) if report.ocr_text else 0}")
+        logger.info(f"[PIPELINE AUDIT] === OCR SAVED === report_id={report.id}, current_status={report.status}, ocr_confidence={report.ocr_confidence}, ocr_provider={report.ocr_provider}, ocr_pages={report.ocr_pages}, processing_duration={processing_duration:.1f}s, ocr_text_length={len(report.ocr_text) if report.ocr_text else 0}")
 
         return result
