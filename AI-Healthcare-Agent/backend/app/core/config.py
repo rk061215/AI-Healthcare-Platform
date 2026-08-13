@@ -28,8 +28,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     WORKERS: int = 4
 
-    # Database
-    DATABASE_URL: str = "postgresql://neondb_owner:npg_wyaN8m5pdIgM@ep-holy-tree-au74ocm0.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    # Database — must be set via DATABASE_URL environment variable in production.
+    # Default uses local SQLite for development only.
+    DATABASE_URL: str = "sqlite:///./test.db"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
@@ -46,7 +47,7 @@ class Settings(BaseSettings):
     # AI Provider (vendor-agnostic abstraction)
     AI_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
     GEMINI_BASE_URL: str = ""
     EMBEDDING_PROVIDER: str = "gemini"
     EMBEDDING_MODEL: str = "models/gemini-embedding-001"
@@ -110,7 +111,10 @@ class Settings(BaseSettings):
 
     @property
     def upload_path(self) -> Path:
-        path = Path(self.UPLOAD_DIR)
+        if self._is_container() and self.UPLOAD_DIR == "./uploads":
+            path = Path("/tmp/uploads")
+        else:
+            path = Path(self.UPLOAD_DIR)
         path.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -125,7 +129,10 @@ class Settings(BaseSettings):
 
     @property
     def document_storage_path(self) -> Path:
-        path = Path(self.DOCUMENT_STORAGE_DIR)
+        if self._is_container() and self.DOCUMENT_STORAGE_DIR == "./documents":
+            path = Path("/tmp/documents")
+        else:
+            path = Path(self.DOCUMENT_STORAGE_DIR)
         path.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -216,6 +223,12 @@ class Settings(BaseSettings):
             warnings.warn(
                 "JWT_SECRET_KEY is set to the default insecure value. "
                 "Set a strong random secret via the JWT_SECRET_KEY environment variable in production.",
+                stacklevel=2,
+            )
+        if self.ENVIRONMENT.lower() in ("production", "staging") and self.DATABASE_URL.startswith("sqlite"):
+            warnings.warn(
+                "DATABASE_URL is using SQLite in a production/staging environment. "
+                "Set DATABASE_URL to a PostgreSQL connection string via environment variable.",
                 stacklevel=2,
             )
 

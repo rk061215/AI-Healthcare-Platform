@@ -45,10 +45,17 @@ docker-compose.override.yml
 uploads/
 media/
 
-# Environment
+# Environment — real secret files (never commit these)
 .env
 .env.local
 .env.production
+.env.staging
+backend/.env
+backend/.env.local
+backend/.env.production
+# .env.example files are safe to commit (they contain only placeholders)
+!.env.example
+!backend/.env.example
 
 # Generated data
 chromadb_data/

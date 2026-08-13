@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+from app.core.config import settings
 from app.core.exceptions import AppException
 
 
@@ -24,6 +25,6 @@ def setup_error_handlers(app: FastAPI) -> None:
             status_code=500,
             content={
                 "error": "Internal server error",
-                "detail": str(exc) if __debug__ else None,
+                "detail": str(exc) if settings.DEBUG else None,
             },
         )
