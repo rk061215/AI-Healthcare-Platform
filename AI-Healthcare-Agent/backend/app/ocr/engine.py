@@ -81,6 +81,7 @@ class OcrEngine:
                 else:
                     llog.warning(f"[OCR AUDIT] Extracted text is EMPTY")
 
+                llog.info(f"[OCR DIAG] Attempt={attempt+1} Provider={provider.name} Threshold={threshold} Raw_confidence={ocr_result.confidence} Processed_confidence={job_result.confidence} Pass={job_result.confidence >= threshold}")
                 llog.info(f"[OCR AUDIT] Checking confidence: {job_result.confidence} >= {threshold} = {job_result.confidence >= threshold}")
                 if job_result.confidence >= threshold:
                     llog.info(f"[OCR AUDIT] Confidence PASSED — returning result on attempt {attempt + 1}")

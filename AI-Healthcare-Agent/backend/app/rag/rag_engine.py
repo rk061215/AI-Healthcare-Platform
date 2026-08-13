@@ -111,7 +111,6 @@ class RAGEngine:
 
             from loguru import logger as llog
             llog.info(f"RAGEngine.answer: query={request.query!r}, patient_id={request.patient_id}, report_id={request.report_id}")
-            llog.info(f"RAGEngine.answer: document_text length={len(document_text) if document_text else None}")
 
             # 4. Retrieval + Context Building
             retrieval_exception = None
@@ -136,7 +135,7 @@ class RAGEngine:
                 llog.info(f"RAGEngine: retrieval OK — num_docs={metrics.num_documents_retrieved}, num_frags={metrics.num_fragments_in_context}, has_sufficient_context={context.has_sufficient_context}, context_len={len(context.context) if context.context else 0}")
             except Exception as exc:
                 retrieval_exception = exc
-                llog.warning(f"RAGEngine: retrieval THREW exception: {type(exc).__name__}: {exc}")
+                llog.warning(f"RAGEngine: retrieval FAILED: {type(exc).__name__}: {exc}")
                 metrics.retrieval_ms = 0.0
                 metrics.context_build_ms = 0.0
                 metrics.num_documents_retrieved = 0
@@ -145,11 +144,9 @@ class RAGEngine:
                     context="", has_sufficient_context=False, build_time_ms=0.0
                 )
 
-            llog.info(f"RAGEngine: checking fallback condition — has_sufficient_context={context.has_sufficient_context}, document_text is None={document_text is None}")
-            llog.info(f"RAGEngine: fallback EXECUTED={not context.has_sufficient_context and bool(document_text)}")
+            llog.info(f"RAGEngine: fallback check — has_sufficient_context={context.has_sufficient_context}, document_text present={document_text is not None}")
             if not context.has_sufficient_context and document_text:
-                llog.info(f"RAGEngine: === FALLBACK PATH TAKEN ===")
-                llog.info(f"RAGEngine: document_text length={len(document_text)}")
+                llog.info(f"RAGEngine: fallback to OCR text ({len(document_text)} chars)")
                 snippet = document_text[:1000]
                 fallback_chunk_id = f"doc_text_{request.report_id or 'unknown'}"
                 context = RAGContext(
@@ -172,13 +169,9 @@ class RAGEngine:
                     build_time_ms=0.0,
                 )
                 metrics.num_fragments_in_context = 1
-                llog.info(f"RAGEngine: synthetic context first 200 chars: {document_text[:200]!r}")
-                llog.info(f"RAGEngine: synthetic has_sufficient_context={context.has_sufficient_context}, context_len={len(context.context)}")
             else:
-                path = "retrieved_chunks" if context.has_sufficient_context else ("document_text_fallback" if document_text else "no_context")
-                ctx_preview = repr(context.context[:200]) if context.context else "(empty)"
-                llog.info(f"RAGEngine: fallback NOT executed — path={path}, has_sufficient={context.has_sufficient_context}, doc_text_null={document_text is None}")
-                llog.info(f"RAGEngine: context.context[:200]={ctx_preview}")
+                path = "retrieved_chunks" if context.has_sufficient_context else ("no_context")
+                llog.info(f"RAGEngine: using path={path}")
 
             if request.conversation_history:
                 context.conversation_history = request.conversation_history
@@ -190,9 +183,8 @@ class RAGEngine:
                     query=request.query, context=context
                 )
                 metrics.guardrail_pre_ms = (time.perf_counter() - t0) * 1000
-                llog.info(f"RAGEngine: guardrail_pre passed={pre_result.passed}, failures={pre_result.failures}, warnings={pre_result.warnings}")
                 if pre_result.failures:
-                    llog.warning(f"RAGEngine: guardrail FAILURE — returning guardrail_failure path")
+                    llog.warning(f"RAGEngine: guardrail pre-check FAILURES: {pre_result.failures}")
                     return self._build_guardrail_failure(
                         request=request,
                         pre_result=pre_result,
@@ -208,10 +200,6 @@ class RAGEngine:
             enable_citations = (
                 request.enable_citations and self._config.enable_citations
             )
-            llog.info(f"RAGEngine: === CALLING LLM ===")
-            prompt_preview = self._response_generator._build_prompt(request.query, context)
-            prompt_200 = repr(prompt_preview[:200])
-            llog.info(f"RAGEngine: prompt length={len(prompt_preview)} chars, first 200={prompt_200}")
             answer = self._response_generator.generate(
                 query=request.query,
                 context=context,
@@ -219,7 +207,6 @@ class RAGEngine:
                 max_tokens=request.max_tokens or self._config.max_tokens,
             )
             metrics.generation_ms = (time.perf_counter() - t0) * 1000
-            llog.info(f"RAGEngine: LLM response length={len(answer)}, first 100={answer[:100]!r}")
 
             # 7. Post-generation Guardrails
             post_result: Optional[Any] = None
@@ -271,9 +258,6 @@ class RAGEngine:
                 requires_human_review=metrics.guardrails_triggered,
             )
 
-            llog.info(f"RAGEngine: === SUCCESS PATH — returning final answer ===")
-            llog.info(f"RAGEngine: final_answer[:100]={final_answer[:100]!r}")
-
             return RAGResponse(
                 answer=final_answer,
                 citations=citation_block,
@@ -290,6 +274,7 @@ class RAGEngine:
             metrics.total_duration_ms = (
                 time.perf_counter() - overall_start
             ) * 1000
+            from loguru import logger as llog
             llog.warning(f"RAGEngine: === QueryError path ===: {exc}")
             return RAGResponse(
                 answer=f"I couldn't process your question: {exc}",
@@ -303,9 +288,27 @@ class RAGEngine:
             metrics.total_duration_ms = (
                 time.perf_counter() - overall_start
             ) * 1000
+            from loguru import logger as llog
             llog.warning(f"RAGEngine: === RAGError path ===: {type(exc).__name__}: {exc}")
+            error_str = str(exc).lower()
+            if document_text and ("quota" in error_str or "rate" in error_str or "429" in error_str):
+                llog.info(f"RAGEngine: LLM unavailable but OCR text exists ({len(document_text)} chars) — returning OCR-based answer")
+                return RAGResponse(
+                    answer=(
+                        f"Based on the medical document on file:\n\n"
+                        f"{document_text[:3000]}\n\n"
+                        f"---\n"
+                        f"*Note: This answer is based directly on the document text. "
+                        f"The AI assistant is temporarily unavailable due to quota limits.*"
+                    ),
+                    query=request.query,
+                    processing_time_ms=round(metrics.total_duration_ms, 2),
+                    timing_breakdown=self._snapshot_timing(metrics),
+                    model=self._config.model,
+                    provider=self._config.provider,
+                )
             return RAGResponse(
-                answer=f"I encountered an error processing your request: {exc}",
+                answer=f"I encountered an error processing your request. Please try again later.",
                 query=request.query,
                 processing_time_ms=round(metrics.total_duration_ms, 2),
                 timing_breakdown=self._snapshot_timing(metrics),

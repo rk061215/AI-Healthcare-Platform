@@ -25,6 +25,6 @@ def setup_error_handlers(app: FastAPI) -> None:
             status_code=500,
             content={
                 "error": "Internal server error",
-                "detail": str(exc) if settings.DEBUG else None,
+                "detail": str(exc),
             },
         )

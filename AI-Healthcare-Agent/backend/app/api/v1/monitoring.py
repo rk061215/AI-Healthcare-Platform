@@ -81,3 +81,65 @@ def readiness_check(db: Session = Depends(get_db)):
 @router.get("/live")
 def liveness_check():
     return {"status": "alive"}
+
+
+@router.get("/vector-validate")
+def vector_store_validate():
+    """Phase D: Vector store validation endpoint."""
+    import time as _time
+    results = {}
+
+    t0 = _time.perf_counter()
+    try:
+        vs = VectorService()
+        health = vs.health_check()
+        store_h = health.get("vector_store", {})
+        results["collection_exists"] = store_h.get("status") == "ok"
+        results["vector_count"] = store_h.get("document_count", 0)
+        results["dimension"] = store_h.get("dimension")
+        results["distance_function"] = store_h.get("distance_function")
+    except Exception as e:
+        results["error"] = str(e)
+        results["collection_exists"] = False
+    results["collection_check_ms"] = round((_time.perf_counter() - t0) * 1000, 1)
+
+    t0 = _time.perf_counter()
+    try:
+        from app.database.session import SessionLocal
+        db = SessionLocal()
+        try:
+            indexed = db.execute(
+                text("SELECT COUNT(*) FROM vector_index_state WHERE index_status = 'indexed'")
+            ).scalar()
+            total = db.execute(text("SELECT COUNT(*) FROM reports")).scalar()
+            results["indexed_reports"] = indexed
+            results["total_reports"] = total
+            results["coverage"] = f"{indexed}/{total}" if total else "0/0"
+        finally:
+            db.close()
+    except Exception as e:
+        results["db_error"] = str(e)
+    results["db_check_ms"] = round((_time.perf_counter() - t0) * 1000, 1)
+
+    t0 = _time.perf_counter()
+    try:
+        vs = VectorService()
+        search_results = vs.search(query="health check", k=1)
+        results["search_latency_ms"] = round((_time.perf_counter() - t0) * 1000, 1)
+        results["search_works"] = True
+    except Exception as e:
+        results["search_works"] = False
+        results["search_error"] = str(e)
+        results["search_latency_ms"] = round((_time.perf_counter() - t0) * 1000, 1)
+
+    results["overall"] = "ok" if results.get("collection_exists") and results.get("search_works") else "degraded"
+    return results
+
+
+@router.get("/health-dashboard")
+def full_health_dashboard():
+    """Phase G: Full health dashboard with all subsystem checks."""
+    from app.observability.health_dashboard import HealthDashboard
+    dashboard = HealthDashboard()
+    report = dashboard.get_full_health_report()
+    return report.to_dict()

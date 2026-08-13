@@ -89,20 +89,29 @@ class SearchFilter(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     def to_chroma_filter(self) -> dict[str, Any]:
-        """Convert to ChromaDB metadata filter dict."""
-        f: dict[str, Any] = {}
+        """Convert to ChromaDB metadata filter dict.
+
+        ChromaDB 1.5+ requires $and/$or operators when filtering on
+        multiple metadata keys. A flat dict with 2+ keys raises:
+            ValueError: Expected where to have exactly one operator
+        """
+        conditions: list[dict[str, Any]] = []
         if self.patient_id:
-            f["patient_id"] = self.patient_id
+            conditions.append({"patient_id": {"$eq": self.patient_id}})
         if self.report_id:
-            f["report_id"] = self.report_id
+            conditions.append({"report_id": {"$eq": self.report_id}})
         if self.document_type:
-            f["document_type"] = self.document_type
+            conditions.append({"document_type": {"$eq": self.document_type}})
         if self.section:
-            f["section"] = self.section
+            conditions.append({"section": {"$eq": self.section}})
         if self.source:
-            f["source"] = self.source
+            conditions.append({"source": {"$eq": self.source}})
         if self.language:
-            f["language"] = self.language
+            conditions.append({"language": {"$eq": self.language}})
         for k, v in self.metadata.items():
-            f[k] = v
-        return f
+            conditions.append({k: {"$eq": v}})
+        if len(conditions) == 0:
+            return {}
+        if len(conditions) == 1:
+            return conditions[0]
+        return {"$and": conditions}

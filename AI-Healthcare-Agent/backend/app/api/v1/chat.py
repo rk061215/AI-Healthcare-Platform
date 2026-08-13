@@ -1,6 +1,9 @@
+import uuid
+import traceback as _tb
 from typing import Optional, Tuple
 
 from fastapi import APIRouter, Depends
+from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_patient, get_db
@@ -19,7 +22,8 @@ def _get_graph():
 
 
 def _get_patient_report_text(db: Session, patient_id: str) -> Tuple[Optional[str], Optional[str], dict]:
-    all_reports = db.query(Report).filter(Report.patient_id == patient_id).order_by(Report.uploaded_at.desc()).all()
+    patient_uuid = uuid.UUID(patient_id) if isinstance(patient_id, str) else patient_id
+    all_reports = db.query(Report).filter(Report.patient_id == patient_uuid).order_by(Report.uploaded_at.desc()).all()
     diag = {
         "total_reports": len(all_reports),
         "statuses": [str(r.status) for r in all_reports],
@@ -70,10 +74,25 @@ def send_message(
             },
         )
     except Exception as exc:
+        logger.error(f"[CHAT ERROR] {type(exc).__name__}: {exc}")
+        error_str = str(exc).lower()
+        if "quota" in error_str or "429" in error_str or "rate" in error_str:
+            reply = "The AI service is temporarily unavailable due to high demand. Your document is available — please try again in a few minutes."
+        elif "timeout" in error_str or "deadline" in error_str:
+            reply = "The request took too long to process. Please try a simpler question."
+        elif "api key" in error_str or "unauthorized" in error_str or "401" in error_str or "403" in error_str:
+            reply = "The AI service is not configured correctly. Please contact support."
+        elif "500" in error_str or "503" in error_str or "internal" in error_str:
+            reply = "The AI service encountered an internal error. Please try again later."
+        else:
+            reply = "I'm having trouble processing your question right now. Please try again."
+
         return ChatResponse(
-            reply=f"AI service is not available. Please verify the GEMINI_API_KEY is set correctly on the server. Details: {exc}",
+            reply=reply,
             metadata={
-                "error": str(exc),
+                "error_type": type(exc).__name__,
+                "error": str(exc)[:500],
+                "report_diag": _get_patient_report_text(db, payload["sub"])[2],
             },
         )
 

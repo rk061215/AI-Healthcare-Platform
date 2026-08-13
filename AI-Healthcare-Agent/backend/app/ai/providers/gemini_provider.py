@@ -73,7 +73,8 @@ class GeminiProvider(BaseProvider):
                 self._raise_for_error(e)
                 if attempt < self.config.max_retries - 1:
                     import time as time_mod
-                    time_mod.sleep(self.config.retry_backoff_seconds * (2**attempt))
+                    backoff = self.config.retry_backoff_seconds * (2 ** attempt)
+                    time_mod.sleep(min(backoff, 30))
                 else:
                     raise RetryExhaustedError(f"Gemini text generation failed after {self.config.max_retries} retries: {e}")
 
@@ -185,6 +186,8 @@ class GeminiProvider(BaseProvider):
             raise TimeoutError(f"Gemini request timed out: {error}")
         if "api key" in error_str or "unauthorized" in error_str or "invalid" in error_str or "permission" in error_str:
             raise InvalidAPIKeyError(f"Invalid Gemini API key: {error}")
+        if "500" in error_str or "503" in error_str or "internal" in error_str or "service unavailable" in error_str:
+            raise ModelUnavailableError(f"Gemini service temporarily unavailable: {error}")
         if "not found" in error_str or "model" in error_str:
             raise ModelUnavailableError(f"Gemini model unavailable: {error}")
 

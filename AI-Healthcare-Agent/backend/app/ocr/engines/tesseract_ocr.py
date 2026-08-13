@@ -74,6 +74,30 @@ class TesseractEngine(BaseOCR):
             pass
         return mapped
 
+    def process_pdf(self, pdf_path, language="en", dpi=300):
+        if self.use_mock:
+            return self._mock_pdf(pdf_path, language, dpi)
+        return super().process_pdf(pdf_path, language=language, dpi=dpi)
+
+    def _mock_pdf(self, pdf_path, language="en", dpi=300):
+        from loguru import logger as llog
+        from app.ocr.engines.future.google_vision import GoogleVisionEngine
+
+        start = time.time()
+        gv = GoogleVisionEngine(self.config)
+        dummy = Image.new("RGB", (800, 1100), "white")
+        base = gv._mock_process(dummy, language)
+        gv_conf = base.confidence
+        gv_text_len = len(base.full_text)
+        base.provider = "tesseract_mock"
+        base.confidence = round(base.confidence * 0.85, 4)
+        from app.ocr.schemas import OcrPageResult
+        base.pages = [OcrPageResult(page_number=1, text=base.full_text, confidence=base.confidence, language=language, processing_time_ms=base.processing_time_ms)]
+        elapsed = (time.time() - start) * 1000
+        base.processing_time_ms = round(elapsed, 2)
+        llog.info(f"[OCR AUDIT MOCK] _mock_pdf: gv_conf={gv_conf}, final_conf={base.confidence}, text_len={gv_text_len}")
+        return base
+
     def process_image(self, image: Image.Image, language: str = "en") -> OcrResult:
         if self.use_mock:
             return self._mock_process(image, language)
@@ -163,9 +187,11 @@ class TesseractEngine(BaseOCR):
         gv = GoogleVisionEngine(self.config)
         base = gv._mock_process(image, language)
         gv_conf = base.confidence
+        gv_text_len = len(base.full_text)
         base.provider = "tesseract_mock"
         base.confidence = round(base.confidence * 0.85, 4)
-        llog.info(f"[OCR AUDIT MOCK] GoogleVision mock returned confidence={gv_conf}, after *0.85={base.confidence}, text_len={len(base.full_text)}, first_200={base.full_text[:200]!r}")
+        llog.info(f"[OCR AUDIT MOCK] GoogleVision mock returned confidence={gv_conf}, after *0.85={base.confidence}, text_len={gv_text_len}, first_200={base.full_text[:200]!r}")
+        llog.info(f"[OCR DIAG] _mock_process: gv_confidence={gv_conf} tesseract_confidence={base.confidence} multiplier=0.85 image_size={image.size} text_len={gv_text_len}")
         return base
 
 

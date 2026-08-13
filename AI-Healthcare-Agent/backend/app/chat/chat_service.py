@@ -74,15 +74,7 @@ class ChatService:
         is_follow_up = self._sessions.is_follow_up_question(session_id)
 
         from loguru import logger as llog
-        llog.info("=== CHAT START ===")
-        llog.info(f"patient_id: {request.patient_id}")
-        llog.info(f"session_id: {session_id}")
-        llog.info(f"report_id (request): {request.report_id}")
-        llog.info(f"report_id (session): {getattr(session, 'report_id', None)}")
-        llog.info(f"query: {request.query!r}")
-        llog.info(f"document_text length: {len(document_text) if document_text else None}")
-        llog.info(f"document_text first 100 chars: {document_text[:100]!r}..." if document_text else "document_text: None")
-        llog.info(f"graph_available: {self._graph_available}")
+        llog.info(f"ChatService.ask: query={request.query!r}, patient_id={request.patient_id}, has_doc_text={document_text is not None}")
 
         if self._graph_available:
             try:
@@ -188,7 +180,6 @@ class ChatService:
     ) -> ChatResponse:
         from loguru import logger as llog
         resolved_report_id = session.report_id or request.report_id
-        llog.info(f"_ask_direct: calling RAGEngine.answer with report_id={resolved_report_id}, document_text_length={len(document_text) if document_text else None}")
         try:
             rag_response = self._rag_engine.answer(
                 RAGRequest(
@@ -207,13 +198,7 @@ class ChatService:
         except Exception as exc:
             raise ChatError(f"Failed to process question: {exc}") from exc
 
-        llog.info(f"_ask_direct: RAGEngine returned answer[:100]={rag_response.answer[:100]!r}")
-        llog.info(f"_ask_direct: query_type={rag_response.query_type}, processing_time_ms={rag_response.processing_time_ms}")
-        llog.info(f"_ask_direct: citations count={rag_response.citations.citation_count if rag_response.citations else 0}")
-        llog.info(f"_ask_direct: timing_breakdown={rag_response.timing_breakdown}")
-
         confidence = self._calculate_confidence(rag_response)
-        llog.info(f"_ask_direct: confidence overall={confidence.overall}, insufficient_evidence={confidence.insufficient_evidence}, chunk_count={confidence.chunk_count}")
 
         suggested = self._generate_suggestions(session, request.query)
 

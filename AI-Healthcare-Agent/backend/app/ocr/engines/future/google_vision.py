@@ -49,6 +49,9 @@ class GoogleVisionEngine(BaseOCR):
         )
 
         overall_conf = round(sum(w.confidence for w in words) / max(len(words), 1), 4) if words else 0.92
+        word_confs = [w.confidence for w in words[:5]]
+        from loguru import logger as llog
+        llog.info(f"[OCR DIAG] GV_mock: n_words={len(words)} word_confs_sample={word_confs} avg={overall_conf} fallback=0.92")
 
         return OcrResult(
             full_text=text,

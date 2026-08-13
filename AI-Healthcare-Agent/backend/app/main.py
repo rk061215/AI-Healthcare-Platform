@@ -147,6 +147,22 @@ async def lifespan(app: FastAPI):
     logger.info(f"CHROMA_COLLECTION_NAME={settings.CHROMA_COLLECTION_NAME!r}")
     logger.info("=" * 58)
 
+    _t = _time.perf_counter()
+    try:
+        from app.observability.health_dashboard import HealthDashboard
+        _hd = HealthDashboard()
+        _report = _hd.get_full_health_report()
+        logger.info("=" * 58)
+        logger.info("STARTUP HEALTH SUMMARY")
+        for _sub in _report.subsystems:
+            _icon = "PASS" if _sub.status.value == "healthy" else ("WARN" if _sub.status.value == "warning" else "FAIL")
+            logger.info(f"  {_icon} {_sub.name:20s} {_sub.message} ({_sub.latency_ms:.0f}ms)")
+        logger.info(f"  {'OVERALL':20s} {_report.status.value}")
+        logger.info("=" * 58)
+    except Exception as _exc:
+        logger.warning(f"Health dashboard startup check failed: {_exc}")
+    _timings["health_dashboard"] = _time.perf_counter() - _t
+
     _total = _time.perf_counter() - _startup_t0
     logger.info("=" * 58)
     logger.info("STARTUP TIMELINE")
